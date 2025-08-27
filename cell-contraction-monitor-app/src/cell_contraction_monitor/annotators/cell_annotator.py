@@ -54,6 +54,6 @@ def decorate_with_cells(full_img: np.ndarray,
         scene = cv2.circle(scene, well_center, int(
             well_radius), (0, 0, 255), 3)
         scene = cv2.putText(
-            scene, f"{i}", well_center, fontFace, fontScale, color, thickness, lineType)
+            scene, f"{i+1}", well_center, fontFace, fontScale, color, thickness, lineType)
 
     return scene

@@ -1,7 +1,14 @@
-import onnxruntime
-import numpy as np
-import cv2
+import os
+
 import cell_contraction_monitor.processing.wells_selection as ccm_ws
+import cv2
+import numpy as np
+
+if os.name == 'nt':
+    import onnxruntime.tools.add_openvino_win_libs as utils
+    utils.add_openvino_libs_to_path()
+import onnxruntime
+
 
 class CellInWellSegmentatior():
     TARGET_SHAPE = 384
@@ -13,20 +20,47 @@ class CellInWellSegmentatior():
         self.sess_options.graph_optimization_level = (
             onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
         )
+        from openvino import Core
+        ov_devs = Core().available_devices
+
         self.ort_session = onnxruntime.InferenceSession(
             self._onnx_model_path,
-            providers=["CPUExecutionProvider"],
+            providers=[
+                # "OpenVINOExecutionProvider",
+                "CPUExecutionProvider"
+            ],
+            provider_options=[
+                # {'device_type': "GPU" if "GPU" in ov_devs else "AUTO"},
+                {}
+            ],
             sess_options=self.sess_options,
         )
+        self.centers = None
+        self.well_radius = None
+
+    def predefine_wells(self, image_np: np.ndarray, target_count) -> bool:
+        if len(image_np.shape) == 3:
+            image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+        centers, well_radius = ccm_ws.find_wells(image_np)
+        if centers.shape[0] == target_count:
+            self.centers = centers
+            self.well_radius = well_radius
+            return True
+        else:
+            return False
 
     def process_image(self, image_np: np.ndarray):
         if len(image_np.shape) == 3:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
-            
-        centers, well_radius = ccm_ws.find_wells(image_np)
+
+        if self.centers is None:
+            centers, well_radius = ccm_ws.find_wells(image_np)
+        else:
+            centers, well_radius = self.centers, self.well_radius
+
         well_images, well_masks = ccm_ws.get_well_images(
             image_np, centers, well_radius)
-        
+
         cell_masks = []
         for i, well_image in enumerate(well_images):
             well_image = self._preprocess_well(well_image)
@@ -50,7 +84,8 @@ class CellInWellSegmentatior():
 
     def _segment_cell(self, well_image: np.ndarray) -> np.ndarray:
         ort_inputs_1 = {
-            self.ort_session.get_inputs()[0].name: well_image[np.newaxis, np.newaxis, :]
+            self.ort_session.get_inputs(
+            )[0].name: well_image[np.newaxis, np.newaxis, :]
         }
 
         mask = self.ort_session.run(None, ort_inputs_1)[0][0]
