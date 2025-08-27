@@ -1,1 +1,1 @@
-# cells-contraction-monitor
+# Cells Contraction Monitor System
