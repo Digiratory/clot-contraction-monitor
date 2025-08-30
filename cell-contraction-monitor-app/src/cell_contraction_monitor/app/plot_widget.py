@@ -66,9 +66,67 @@ class PlotFrame(ttk.Frame):
                     # activebackground="#4a5568"
                 )
 
+        # Create control frame for grouping options
+        self.control_frame = ttk.Frame(self)
+        self.control_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
+        
+        # Grouping radio buttons
+        self.grouping_var = tk.StringVar(value="all")
+        grouping_frame = ttk.LabelFrame(self.control_frame, text="Data Grouping", padding=5)
+        grouping_frame.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Radiobutton(grouping_frame, text="All Wells", variable=self.grouping_var, 
+                       value="all", command=self._on_grouping_changed).pack(anchor=tk.W)
+        ttk.Radiobutton(grouping_frame, text="Group by Rows", variable=self.grouping_var,
+                       value="rows", command=self._on_grouping_changed).pack(anchor=tk.W)
+        ttk.Radiobutton(grouping_frame, text="Group by Columns", variable=self.grouping_var,
+                       value="columns", command=self._on_grouping_changed).pack(anchor=tk.W)
+
         # Pack the toolbar first, then the canvas
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    def _on_grouping_changed(self):
+        """Handle grouping option changes."""
+        # Replot with current data using new grouping
+        if hasattr(self, '_current_data') and self._current_data is not None:
+            self.update_plot(self._current_data)
+
+    def _group_by_rows(self, data_array):
+        """Group wells by rows (5 rows of 8 wells each)."""
+        # Wells arranged in 5x8 grid: 0-39
+        # Row 0: wells 0-7, Row 1: wells 8-15, etc.
+        rows = 5
+        cols = 8
+        grouped_data = []
+        
+        for row in range(rows):
+            row_wells = data_array[:, row*cols:(row+1)*cols]
+            if row_wells.size > 0:
+                # Calculate mean and std for each frame in this row
+                row_mean = np.mean(row_wells, axis=1)
+                row_std = np.std(row_wells, axis=1)
+                grouped_data.append((row_mean, row_std, f"Row {row+1}"))
+        
+        return grouped_data
+
+    def _group_by_columns(self, data_array):
+        """Group wells by columns (8 columns of 5 wells each)."""
+        # Wells arranged in 5x8 grid: 0-39
+        # Column 0: wells 0,8,16,24,32, Column 1: wells 1,9,17,25,33, etc.
+        rows = 5
+        cols = 8
+        grouped_data = []
+        
+        for col in range(cols):
+            col_wells = data_array[:, col::cols]  # Extract every 8th element starting from col
+            if col_wells.size > 0:
+                # Calculate mean and std for each frame in this column
+                col_mean = np.mean(col_wells, axis=1)
+                col_std = np.std(col_wells, axis=1)
+                grouped_data.append((col_mean, col_std, f"Column {col+1}"))
+        
+        return grouped_data
 
     def update_plot(self, data: Optional[Union[np.ndarray, list]] = None) -> None:
         """Update the plot with new data.
@@ -103,23 +161,56 @@ class PlotFrame(ttk.Frame):
         # self.ax.spines['right'].set_color("#4a5568")
 
         if data is not None and len(data) > 0:
+            # Store current data for potential replotting
+            self._current_data = data
+
             # Convert to numpy array for consistent handling
             data_array = np.array(data)
 
-            # Plot each well's data
+            # Get current grouping option
+            grouping_option = self.grouping_var.get()
+
             if len(data_array.shape) == 2:
                 # Multiple wells per frame
-                colors = plt.cm.Set1(np.linspace(0, 1, data_array.shape[1]))
-                for i in range(data_array.shape[1]):
-                    self.ax.plot(
-                        data_array[:, i], label=f"Well {i+1}", marker='o', markersize=4, color=colors[i])
-                self.ax.legend(
-                    bbox_to_anchor=(1.05, 1),
-                    loc='upper left',
-                    # facecolor="#2d3436",
-                    # edgecolor="#4a5568",
-                    # labelcolor="#ffffff"
-                )
+                if grouping_option == "all":
+                    # Plot all wells individually (original behavior)
+                    colors = plt.cm.Set1(np.linspace(0, 1, data_array.shape[1]))
+                    for i in range(data_array.shape[1]):
+                        self.ax.plot(
+                            data_array[:, i], label=f"Well {i+1}", marker='o', markersize=4, color=colors[i])
+                    self.ax.legend(
+                        bbox_to_anchor=(1.05, 1),
+                        loc='upper left',
+                        # facecolor="#2d3436",
+                        # edgecolor="#4a5568",
+                        # labelcolor="#ffffff"
+                    )
+                elif grouping_option == "rows":
+                    # Group by rows and plot mean with std deviation
+                    grouped_data = self._group_by_rows(data_array)
+                    colors = plt.cm.Set1(np.linspace(0, 1, len(grouped_data)))
+                    for i, (mean_vals, std_vals, label) in enumerate(grouped_data):
+                        color = colors[i]
+                        # Plot mean line
+                        self.ax.plot(mean_vals, label=label, color=color, linewidth=2)
+                        # Plot standard deviation as semi-transparent area
+                        self.ax.fill_between(range(len(mean_vals)), 
+                                           mean_vals - std_vals, mean_vals + std_vals,
+                                           alpha=0.2, color=color)
+                    self.ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+                elif grouping_option == "columns":
+                    # Group by columns and plot mean with std deviation
+                    grouped_data = self._group_by_columns(data_array)
+                    colors = plt.cm.Set1(np.linspace(0, 1, len(grouped_data)))
+                    for i, (mean_vals, std_vals, label) in enumerate(grouped_data):
+                        color = colors[i]
+                        # Plot mean line
+                        self.ax.plot(mean_vals, label=label, color=color, linewidth=2)
+                        # Plot standard deviation as semi-transparent area
+                        self.ax.fill_between(range(len(mean_vals)), 
+                                           mean_vals - std_vals, mean_vals + std_vals,
+                                           alpha=0.2, color=color)
+                    self.ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             elif len(data_array.shape) == 1:
                 # Single series of data
                 self.ax.plot(data_array, marker='o', markersize=4)
