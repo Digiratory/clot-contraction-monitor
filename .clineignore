@@ -1,0 +1,56 @@
+# Cline ignore file - files and directories that Cline should ignore
+
+# Cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Log files
+*.log
+
+# Local configuration
+.config/
+
+# Large binary files
+*.onnx
+*.pth
+*.pt
+*.h5
+*.model
+
+# Git files
+.git/
+
+# System files
+Thumbs.db
+.DS_Store
