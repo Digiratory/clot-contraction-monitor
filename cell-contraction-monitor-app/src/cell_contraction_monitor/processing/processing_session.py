@@ -23,6 +23,7 @@ class ProcessingSession:
 
     def __init__(self) -> None:
         """Initialize the processing session with default settings."""
+        # TODO: implement logic to save processing results into persistance storage.
         try:
             self.segmentator = CellInWellSegmentatior("./models/model.onnx")
             self.logger.info("Processing session initialized successfully")

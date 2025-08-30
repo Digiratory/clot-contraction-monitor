@@ -140,6 +140,7 @@ class FramePreview(ttk.Frame):
         # Get image data from processing session
         if self._processing_session is not None:
             try:
+                # TODO: add control for flag `annotated` to show labeled or raw images
                 img_array = self._processing_session.get_image(frame_idx)
                 if img_array is not None:
                     # Convert numpy array to PIL Image for display
