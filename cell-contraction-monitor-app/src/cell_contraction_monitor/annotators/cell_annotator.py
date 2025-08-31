@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def overlay_image_alpha(img, img_overlay, pos, alpha_mask):
@@ -32,10 +32,9 @@ def overlay_image_alpha(img, img_overlay, pos, alpha_mask):
     return img
 
 
-def decorate_with_cells(full_img: np.ndarray,
-                        centers: list,
-                        well_radius: float,
-                        cell_masks: np.ndarray) -> np.ndarray:
+def decorate_with_cells(
+    full_img: np.ndarray, centers: list, well_radius: float, cell_masks: np.ndarray
+) -> np.ndarray:
     scene = np.array(full_img, copy=True, dtype=np.uint8)
 
     fontFace = cv2.FONT_HERSHEY_SIMPLEX
@@ -48,12 +47,23 @@ def decorate_with_cells(full_img: np.ndarray,
         cell_overlay = np.zeros(cell_mask.shape + (3,), dtype=np.uint8)
         cell_overlay[:, :, 1] = 255
         scene = overlay_image_alpha(
-            scene, cell_overlay, centers[i] - np.array(cell_mask.shape[0]) // 2, cell_mask)
+            scene,
+            cell_overlay,
+            centers[i] - np.array(cell_mask.shape[0]) // 2,
+            cell_mask,
+        )
 
     for i, well_center in enumerate(centers):
-        scene = cv2.circle(scene, well_center, int(
-            well_radius), (0, 0, 255), 3)
+        scene = cv2.circle(scene, well_center, int(well_radius), (0, 0, 255), 3)
         scene = cv2.putText(
-            scene, f"{i+1}", well_center, fontFace, fontScale, color, thickness, lineType)
+            scene,
+            f"{i+1}",
+            well_center,
+            fontFace,
+            fontScale,
+            color,
+            thickness,
+            lineType,
+        )
 
     return scene

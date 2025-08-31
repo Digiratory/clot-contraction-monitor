@@ -1,12 +1,12 @@
-import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import Circle
 
 
 def moving_average(x, w):
-    x_padded = np.pad(x, (w//2, w-1-w//2), mode='edge')
-    return np.convolve(x_padded, np.ones(w), 'valid') / w
+    x_padded = np.pad(x, (w // 2, w - 1 - w // 2), mode="edge")
+    return np.convolve(x_padded, np.ones(w), "valid") / w
 
 
 def find_nearests(value, array, threshold):
@@ -20,6 +20,7 @@ def bubble_sort(arr, threshold):
             return x[0] > y[0]
         else:
             return x[1] > y[1]
+
     n = len(arr)
     for i in range(n - 1):
         for j in range(0, n - i - 1):
@@ -43,12 +44,10 @@ def merge_nearests(array, threshold):
     return np.squeeze(np.array(merged_array))
 
 
-def find_wells(image_np: np.ndarray,
-               n_wells_x=8,
-               n_wells_y=5,
-               threshold: int = 50):
+def find_wells(image_np: np.ndarray, n_wells_x=8, n_wells_y=5, threshold: int = 50):
     circles = cv2.HoughCircles(
-        image_np, cv2.HOUGH_GRADIENT_ALT,
+        image_np,
+        cv2.HOUGH_GRADIENT_ALT,
         dp=2,
         minDist=50,
         param1=100,
@@ -69,8 +68,7 @@ def plot_wells(image_np, centers, average_radius):
     for i, (xx, yy) in enumerate(centers):
         circ = Circle((xx, yy), average_radius, fill=False, color="blue")
         ax.add_patch(circ)
-        ax.text(xx, yy, i,
-                ha="center", va="center", color="red")
+        ax.text(xx, yy, i, ha="center", va="center", color="red")
 
 
 def make_well_masks(image_shape, centers, average_radius) -> np.ndarray:
@@ -92,7 +90,8 @@ def make_well_masks(image_shape, centers, average_radius) -> np.ndarray:
     mask = np.zeros((centers.shape[0],) + image_shape, dtype=np.uint8)
     for i, (xx, yy) in enumerate(centers):
         mask[i, :, :] = cv2.circle(
-            np.zeros(image_shape), (int(xx), int(yy)), int(average_radius), 1, -1)
+            np.zeros(image_shape), (int(xx), int(yy)), int(average_radius), 1, -1
+        )
     return mask
 
 
@@ -103,20 +102,28 @@ def get_well_images(image_np, centers, average_radius):
     well_masks = []
     for i, center in zip(range(masks.shape[0]), centers):
         masked_image: np.ndarray = image_np * masks[i]
-        masked_image = masked_image[int(center[1] - average_radius):int(center[1] + average_radius),
-                                    int(center[0] - average_radius):int(center[0] + average_radius)]
+        masked_image = masked_image[
+            int(center[1] - average_radius) : int(center[1] + average_radius),
+            int(center[0] - average_radius) : int(center[0] + average_radius),
+        ]
 
         well_image = np.zeros(
-            (int(2*average_radius)+1, int(2*average_radius)+1), dtype=masked_image.dtype)
-        well_image[:masked_image.shape[0],
-                   :masked_image.shape[1]] = masked_image
+            (int(2 * average_radius) + 1, int(2 * average_radius) + 1),
+            dtype=masked_image.dtype,
+        )
+        well_image[: masked_image.shape[0], : masked_image.shape[1]] = masked_image
 
-        well_mask_fi_mask = masks[i][int(center[1] - average_radius):int(center[1] + average_radius),
-                                     int(center[0] - average_radius):int(center[0] + average_radius)]
+        well_mask_fi_mask = masks[i][
+            int(center[1] - average_radius) : int(center[1] + average_radius),
+            int(center[0] - average_radius) : int(center[0] + average_radius),
+        ]
         well_mask: np.ndarray = np.zeros(
-            (int(2*average_radius)+1, int(2*average_radius)+1), dtype=well_mask_fi_mask.dtype)
-        well_mask[:well_mask_fi_mask.shape[0],
-                  :well_mask_fi_mask.shape[1]] = well_mask_fi_mask
+            (int(2 * average_radius) + 1, int(2 * average_radius) + 1),
+            dtype=well_mask_fi_mask.dtype,
+        )
+        well_mask[: well_mask_fi_mask.shape[0], : well_mask_fi_mask.shape[1]] = (
+            well_mask_fi_mask
+        )
 
         well_masks.append(well_mask)
         well_images.append(well_image)

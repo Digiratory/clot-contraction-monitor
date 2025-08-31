@@ -2,15 +2,16 @@
 Utility functions for handling annotation I/O operations with version tracking.
 """
 
-from io import StringIO, BytesIO
+import base64
 import gzip
+import hashlib
 import json
 import os
-import hashlib
-from typing import Tuple, List, Optional, Any
+from io import BytesIO, StringIO
 from pathlib import Path
+from typing import Any, List, Optional, Tuple
+
 import numpy as np
-import base64
 
 # Current version of the processing session
 CURRENT_VERSION = "1.0.0"
@@ -23,7 +24,7 @@ def decompress_bytes_to_string(inputBytes: bytes) -> str:
     """
     bio = BytesIO()
     stream = BytesIO(inputBytes)
-    decompressor = gzip.GzipFile(fileobj=stream, mode='r')
+    decompressor = gzip.GzipFile(fileobj=stream, mode="r")
     while True:  # until EOF
         chunk = decompressor.read(8192)
         if not chunk:
@@ -43,7 +44,7 @@ def compress_string_to_bytes(inputString: str) -> bytes:
     bio.write(inputString.encode("utf-8"))
     bio.seek(0)
     stream = BytesIO()
-    compressor = gzip.GzipFile(fileobj=stream, mode='w')
+    compressor = gzip.GzipFile(fileobj=stream, mode="w")
     while True:  # until EOF
         chunk = bio.read(8192)
         if not chunk:  # EOF?
@@ -52,7 +53,9 @@ def compress_string_to_bytes(inputString: str) -> bytes:
         compressor.write(chunk)
 
 
-def get_annotation_path(image_path: str, annotation_suffix: str = ".annotation.json.gz") -> str:
+def get_annotation_path(
+    image_path: str, annotation_suffix: str = ".annotation.json.gz"
+) -> str:
     """
     Generate the annotation file path for a given image path.
 
@@ -72,7 +75,7 @@ def save_annotation(
     centers: np.ndarray,
     well_radius: float,
     cell_masks: List[np.ndarray],
-    version: str = CURRENT_VERSION
+    version: str = CURRENT_VERSION,
 ) -> bool:
     """
     Save annotation data as JSON file near the source image with version info.
@@ -90,8 +93,11 @@ def save_annotation(
     try:
         # Convert numpy arrays to lists for JSON serialization
         centers_list = centers.tolist() if isinstance(centers, np.ndarray) else centers
-        cell_masks_list = [base64.b64encode(mask).decode("utf-8")
-                           for mask in cell_masks] if cell_masks else []
+        cell_masks_list = (
+            [base64.b64encode(mask).decode("utf-8") for mask in cell_masks]
+            if cell_masks
+            else []
+        )
 
         # Create annotation data structure with frame index based on file order
         annotation_data = {
@@ -102,7 +108,7 @@ def save_annotation(
             "well_radius": float(well_radius),
             "cell_masks": cell_masks_list,
             "cell_masks_shape": cell_masks[0].shape,
-            "cell_masks_dtype": str(cell_masks[0].dtype)
+            "cell_masks_dtype": str(cell_masks[0].dtype),
         }
 
         # Get annotation file path
@@ -111,10 +117,10 @@ def save_annotation(
         # Save to JSON file
         if annotation_path.endswith(".gz"):
             jsonstring = json.dumps(annotation_data, indent=None)
-            with open(annotation_path, 'wb') as f:
+            with open(annotation_path, "wb") as f:
                 f.write(compress_string_to_bytes(jsonstring))
         else:
-            with open(annotation_path, 'w') as f:
+            with open(annotation_path, "w") as f:
                 json.dump(annotation_data, f, indent=None)
 
         return True
@@ -124,7 +130,11 @@ def save_annotation(
         return False
 
 
-def load_annotation(image_path: str) -> Tuple[Optional[np.ndarray], Optional[float], Optional[List[np.ndarray]], Optional[str]]:
+def load_annotation(
+    image_path: str,
+) -> Tuple[
+    Optional[np.ndarray], Optional[float], Optional[List[np.ndarray]], Optional[str]
+]:
     """
     Load existing annotation from JSON file with version validation.
 
@@ -144,18 +154,19 @@ def load_annotation(image_path: str) -> Tuple[Optional[np.ndarray], Optional[flo
         # Load annotation data
 
         if annotation_path.endswith(".gz"):
-            with open(annotation_path, 'rb') as f:
+            with open(annotation_path, "rb") as f:
                 jsonstr = decompress_bytes_to_string(f.read())
                 annotation_data = json.loads(jsonstr)
         else:
-            with open(annotation_path, 'r') as f:
+            with open(annotation_path, "r") as f:
                 annotation_data = json.load(f)
 
         # Validate version
         version = annotation_data.get("version", "unknown")
         if not check_annotation_version(version):
             print(
-                f"Version mismatch for {image_path}: expected {CURRENT_VERSION}, got {version}")
+                f"Version mismatch for {image_path}: expected {CURRENT_VERSION}, got {version}"
+            )
             return None, None, None, None
 
         # Extract data
@@ -165,8 +176,16 @@ def load_annotation(image_path: str) -> Tuple[Optional[np.ndarray], Optional[flo
         cell_masks_shape = annotation_data.get("cell_masks_shape")
         cell_masks_dtype = annotation_data.get("cell_masks_dtype")
         # Convert masks back to numpy arrays
-        cell_masks = [np.frombuffer(np.array(base64.b64decode(mask)), dtype=cell_masks_dtype).reshape(cell_masks_shape)
-                      for mask in cell_masks_list] if cell_masks_list else []
+        cell_masks = (
+            [
+                np.frombuffer(
+                    np.array(base64.b64decode(mask)), dtype=cell_masks_dtype
+                ).reshape(cell_masks_shape)
+                for mask in cell_masks_list
+            ]
+            if cell_masks_list
+            else []
+        )
 
         return centers, float(well_radius), cell_masks, version
 
@@ -206,7 +225,8 @@ def get_frame_index_from_path(image_path: str) -> int:
 
         # Try to extract number from filename (last sequence of digits)
         import re
-        match = re.search(r'(\d+)$', name_without_ext)
+
+        match = re.search(r"(\d+)$", name_without_ext)
         if match:
             return int(match.group(1))
         else:
@@ -219,10 +239,10 @@ def get_frame_index_from_path(image_path: str) -> int:
 
 
 def get_find_all_frames(folder_path: str, ext: str = "JPG") -> List[str]:
-    image_files = sorted([f for f in os.listdir(
-        folder_path) if f.lower().endswith(f".{ext.lower()}")])
-    return [os.path.join(folder_path, img_file)
-            for img_file in image_files]
+    image_files = sorted(
+        [f for f in os.listdir(folder_path) if f.lower().endswith(f".{ext.lower()}")]
+    )
+    return [os.path.join(folder_path, img_file) for img_file in image_files]
 
 
 def get_last_processed_frame(folder_path: str, ext: str = "JPG") -> int:

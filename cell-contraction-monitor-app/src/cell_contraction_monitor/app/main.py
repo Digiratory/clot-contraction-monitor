@@ -1,8 +1,8 @@
 # cell-contraction-monitor-app/src/cell_contraction_monitor/app/main.py
+import threading
 import tkinter as tk
 from tkinter import filedialog, ttk
-import threading
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
 
 from cell_contraction_monitor.app.frame_preview import FramePreview
 from cell_contraction_monitor.app.plot_widget import PlotFrame
@@ -39,7 +39,8 @@ class CellContractionApp(tk.Tk):
 
         self.processing_session: ProcessingSession = ProcessingSession()
         self.processing_session.add_on_project_loaded_handler(
-            self._on_prosessing_session_loaded)
+            self._on_prosessing_session_loaded
+        )
 
         # Build the UI
         self._create_menu()
@@ -65,8 +66,7 @@ class CellContractionApp(tk.Tk):
             # fg="#ffffff",
             # activebackground="#4a5568"
         )
-        file_menu.add_command(label="Select folder",
-                              command=self.select_folder)
+        file_menu.add_command(label="Select folder", command=self.select_folder)
         menubar.add_cascade(label="File", menu=file_menu)
         self.config(menu=menubar)
 
@@ -82,7 +82,7 @@ class CellContractionApp(tk.Tk):
             progress_bar = ttk.Progressbar(
                 self.status_frame,
                 variable=progress_var,
-                maximum=self.processing_session.frame_count()
+                maximum=self.processing_session.frame_count(),
             )
             progress_bar.pack(side=tk.RIGHT, padx=5, pady=2)
 
@@ -91,15 +91,15 @@ class CellContractionApp(tk.Tk):
                 nonlocal progress_var
                 progress_var.set(new_progress)
                 self.status_text.set(
-                    f"File processing: {new_progress}/{self.processing_session.frame_count()}")
-                self.plot_frame.update_plot(
-                    self.processing_session.get_cell_sizes())
+                    f"File processing: {new_progress}/{self.processing_session.frame_count()}"
+                )
+                self.plot_frame.update_plot(self.processing_session.get_cell_sizes())
 
             # Start processing in a separate thread to keep UI responsive
             self._processing_thread = threading.Thread(
                 target=self.processing_session.load_project,
                 args=(update_progress,),
-                daemon=True
+                daemon=True,
             )
             self._processing_thread.start()
 
@@ -122,7 +122,8 @@ class CellContractionApp(tk.Tk):
 
         # Status bar with improved styling
         self.status_frame = tk.Frame(
-            self, bd=1,
+            self,
+            bd=1,
             relief=tk.SUNKEN,
             # bg="#2d3436"
         )
@@ -139,7 +140,9 @@ class CellContractionApp(tk.Tk):
         )
         self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-    def _on_prosessing_session_loaded(self, processing_session: ProcessingSession) -> None:
+    def _on_prosessing_session_loaded(
+        self, processing_session: ProcessingSession
+    ) -> None:
         """Handle processing session loaded event.
 
         Args:

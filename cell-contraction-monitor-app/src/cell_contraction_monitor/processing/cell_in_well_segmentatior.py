@@ -4,13 +4,14 @@ import cell_contraction_monitor.processing.wells_selection as ccm_ws
 import cv2
 import numpy as np
 
-if os.name == 'nt':
+if os.name == "nt":
     import onnxruntime.tools.add_openvino_win_libs as utils
+
     utils.add_openvino_libs_to_path()
 import onnxruntime
 
 
-class CellInWellSegmentatior():
+class CellInWellSegmentatior:
     TARGET_SHAPE = 384
 
     def __init__(self, onnx_model_path: str):
@@ -21,6 +22,7 @@ class CellInWellSegmentatior():
             onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
         )
         from openvino import Core
+
         ov_devs = Core().available_devices
 
         self.ort_session = onnxruntime.InferenceSession(
@@ -58,8 +60,7 @@ class CellInWellSegmentatior():
         else:
             centers, well_radius = self.centers, self.well_radius
 
-        well_images, well_masks = ccm_ws.get_well_images(
-            image_np, centers, well_radius)
+        well_images, well_masks = ccm_ws.get_well_images(image_np, centers, well_radius)
 
         cell_masks = []
         for i, well_image in enumerate(well_images):
@@ -78,14 +79,14 @@ class CellInWellSegmentatior():
             top = bottom = border_size // 2
 
         well_image = cv2.copyMakeBorder(
-            well_image, top, bottom, top, bottom, cv2.BORDER_CONSTANT, None, 0)
+            well_image, top, bottom, top, bottom, cv2.BORDER_CONSTANT, None, 0
+        )
         well_image = well_image.astype(np.float32) / 255.0
         return well_image
 
     def _segment_cell(self, well_image: np.ndarray) -> np.ndarray:
         ort_inputs_1 = {
-            self.ort_session.get_inputs(
-            )[0].name: well_image[np.newaxis, np.newaxis, :]
+            self.ort_session.get_inputs()[0].name: well_image[np.newaxis, np.newaxis, :]
         }
 
         mask = self.ort_session.run(None, ort_inputs_1)[0][0]

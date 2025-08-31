@@ -1,19 +1,21 @@
-import os
-import cv2
-import numpy as np
-from glob import glob
-from typing import Callable, List, Tuple, Optional, Any
 import logging
+import os
+from glob import glob
+from typing import Any, Callable, List, Optional, Tuple
 
 import cell_contraction_monitor.io.utils as io_utils
-from cell_contraction_monitor.processing.cell_in_well_segmentatior import CellInWellSegmentatior
+import cv2
+import numpy as np
 from cell_contraction_monitor.annotators.cell_annotator import decorate_with_cells
 from cell_contraction_monitor.io.annotation_utils import (
-    save_annotation,
-    load_annotation,
     check_annotation_version,
+    get_find_all_frames,
     get_last_processed_frame,
-    get_find_all_frames
+    load_annotation,
+    save_annotation,
+)
+from cell_contraction_monitor.processing.cell_in_well_segmentatior import (
+    CellInWellSegmentatior,
 )
 
 
@@ -38,14 +40,17 @@ class ProcessingSession:
             self.logger.error(f"Failed to initialize segmentator: {e}")
             raise
 
-        self.on_project_loaded_handlers: List[Callable[[
-            "ProcessingSession"], None]] = []
+        self.on_project_loaded_handlers: List[Callable[["ProcessingSession"], None]] = (
+            []
+        )
         self.images: List[str] = []
         # centers, well_radius, cell_masks
         self.annotations: List[Tuple[np.ndarray, float, List[np.ndarray]]] = []
         self.cell_sizes: Optional[np.ndarray] = None
 
-    def add_on_project_loaded_handler(self, handler: Callable[["ProcessingSession"], None]) -> None:
+    def add_on_project_loaded_handler(
+        self, handler: Callable[["ProcessingSession"], None]
+    ) -> None:
         """Add a callback handler to be called when processing is complete.
 
         Args:
@@ -74,24 +79,25 @@ class ProcessingSession:
                 image_np = io_utils.read_image(img)
                 if image_np is not None:
                     wells_founded = self.segmentator.predefine_wells(
-                        image_np, target_count=ProcessingSession.WELLS_COUNT)
+                        image_np, target_count=ProcessingSession.WELLS_COUNT
+                    )
                     if wells_founded:
                         self.logger.info(
-                            f"Found all wells in {i} image, processing {len(self.images)} images")
+                            f"Found all wells in {i} image, processing {len(self.images)} images"
+                        )
                         break
                 else:
-                    self.logger.error(
-                        "Failed to read {i} image for well detection")
+                    self.logger.error("Failed to read {i} image for well detection")
                     return False
             if not wells_founded:
-                self.logger.warning(
-                    "Could not predefine wells in images")
+                self.logger.warning("Could not predefine wells in images")
                 return False
 
             # Initialize cell sizes array
             if len(self.images) > 0:
                 self.cell_sizes = np.zeros(
-                    (len(self.images), ProcessingSession.WELLS_COUNT), dtype=float)
+                    (len(self.images), ProcessingSession.WELLS_COUNT), dtype=float
+                )
             else:
                 self.cell_sizes = None
 
@@ -105,7 +111,7 @@ class ProcessingSession:
         """Load and process images in the current session.
 
         This method may loads annotations from existing JSON files and populates
-        the session with previously processed data, allowing for resuming 
+        the session with previously processed data, allowing for resuming
         interrupted processing sessions.
 
         Args:
@@ -121,47 +127,50 @@ class ProcessingSession:
 
             # Check for existing annotations and resume from last processed frame
             last_processed = get_last_processed_frame(
-                self.images[0] if self.images else "", "JPG")
+                self.images[0] if self.images else "", "JPG"
+            )
             self.logger.info(f"Resuming from frame {last_processed}")
 
             for i, img_path in enumerate(self.images):
                 try:
                     # Check if we have existing annotation for this frame
                     centers, well_radius, cell_masks, version = load_annotation(
-                        img_path)
+                        img_path
+                    )
 
                     # If we have valid existing annotation and it's the correct version, use it
-                    if (centers is not None and well_radius is not None and
-                            cell_masks is not None and check_annotation_version(version)):
-                        self.logger.info(
-                            f"Using existing annotation for frame {i}")
-                        self.annotations.append(
-                            (centers, well_radius, cell_masks))
+                    if (
+                        centers is not None
+                        and well_radius is not None
+                        and cell_masks is not None
+                        and check_annotation_version(version)
+                    ):
+                        self.logger.info(f"Using existing annotation for frame {i}")
+                        self.annotations.append((centers, well_radius, cell_masks))
                     else:
                         # Process image normally and save annotation
                         self.logger.info(f"Processing new frame {i}")
                         image_np = io_utils.read_image(img_path)
                         if image_np is None:
-                            self.logger.warning(
-                                f"Could not read image: {img_path}")
+                            self.logger.warning(f"Could not read image: {img_path}")
                             continue
-                        centers, well_radius, cell_masks = self._process_image(
-                            image_np)
-                        self.annotations.append(
-                            (centers, well_radius, cell_masks))
+                        centers, well_radius, cell_masks = self._process_image(image_np)
+                        self.annotations.append((centers, well_radius, cell_masks))
 
                         # Save the annotation for persistence
-                        if not save_annotation(img_path, centers, well_radius, cell_masks):
+                        if not save_annotation(
+                            img_path, centers, well_radius, cell_masks
+                        ):
                             self.logger.warning(
-                                f"Failed to save annotation for frame {i}")
+                                f"Failed to save annotation for frame {i}"
+                            )
 
                     if self.cell_sizes is not None and i < len(self.cell_sizes):
                         # Sum over height and width
                         self.cell_sizes[i] = np.sum(cell_masks, axis=(1, 2))
                     callback(i)
                 except Exception as e:
-                    self.logger.error(
-                        f"Error processing image {img_path}: {e}")
+                    self.logger.error(f"Error processing image {img_path}: {e}")
                     continue
 
             return True
@@ -177,7 +186,9 @@ class ProcessingSession:
             except Exception as e:
                 self.logger.error(f"Error in project loaded handler: {e}")
 
-    def _process_image(self, image_np: np.ndarray) -> Tuple[np.ndarray, float, List[np.ndarray]]:
+    def _process_image(
+        self, image_np: np.ndarray
+    ) -> Tuple[np.ndarray, float, List[np.ndarray]]:
         """Process a single image through the segmentation pipeline.
 
         Args:
@@ -220,8 +231,7 @@ class ProcessingSession:
             # Add annotations if requested and available
             if annotated and img_idx < len(self.annotations):
                 centers, well_radius, cell_masks = self.annotations[img_idx]
-                scene = decorate_with_cells(
-                    scene, centers, well_radius, cell_masks)
+                scene = decorate_with_cells(scene, centers, well_radius, cell_masks)
 
             return scene
         except Exception as e:

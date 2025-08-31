@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 from typing import Optional
+
 from cell_contraction_monitor.processing.processing_session import ProcessingSession
 from PIL import Image, ImageTk
 
@@ -20,7 +21,7 @@ class FramePreview(ttk.Frame):
         self.canvas = tk.Canvas(
             self,
             # background="#2d3436",
-            highlightthickness=0
+            highlightthickness=0,
         )
         self.canvas.pack(fill="both", expand=True)
 
@@ -36,7 +37,7 @@ class FramePreview(ttk.Frame):
             text="Frame: 0/0",
             # bg="#2d3436",
             # fg="#ffffff",
-            font=("Arial", 10, "bold")
+            font=("Arial", 10, "bold"),
         )
         self.frame_label.pack(side=tk.LEFT)
 
@@ -61,19 +62,23 @@ class FramePreview(ttk.Frame):
 
         # Navigation buttons with icons (using text for simplicity)
         self.prev_btn = ttk.Button(
-            button_frame, text="◀", command=self._go_to_previous_frame, width=3)
+            button_frame, text="◀", command=self._go_to_previous_frame, width=3
+        )
         self.prev_btn.pack(side=tk.LEFT, padx=2)
 
         self.play_btn = ttk.Button(
-            button_frame, text="▶", command=self._start_auto_increment, width=3)
+            button_frame, text="▶", command=self._start_auto_increment, width=3
+        )
         self.play_btn.pack(side=tk.LEFT, padx=2)
 
         self.stop_btn = ttk.Button(
-            button_frame, text="■", command=self.stop_auto_increment, width=3)
+            button_frame, text="■", command=self.stop_auto_increment, width=3
+        )
         self.stop_btn.pack(side=tk.LEFT, padx=2)
 
         self.next_btn = ttk.Button(
-            button_frame, text="▶", command=self._go_to_next_frame, width=3)
+            button_frame, text="▶", command=self._go_to_next_frame, width=3
+        )
         self.next_btn.pack(side=tk.LEFT, padx=2)
 
         # --- Zoom controls ----------------------------------------------------------
@@ -97,11 +102,12 @@ class FramePreview(ttk.Frame):
             orient="horizontal",
             variable=self.zoom_var,
             command=self._on_zoom_change,
-            length=100
+            length=100,
         )
         self.zoom_scale.pack(side=tk.LEFT, padx=5)
         self.zoom_label = tk.Label(
-            zoom_frame, text="100%",
+            zoom_frame,
+            text="100%",
             # bg="#2d3436",
             # fg="#ffffff"
         )
@@ -142,7 +148,8 @@ class FramePreview(ttk.Frame):
             try:
                 # TODO: add control for flag `annotated` to show labeled or raw images
                 img_array = self._processing_session.get_image(
-                    frame_idx, annotated=True)
+                    frame_idx, annotated=True
+                )
                 if img_array is not None:
                     # Convert numpy array to PIL Image for display
                     img = Image.fromarray(img_array)
@@ -157,15 +164,14 @@ class FramePreview(ttk.Frame):
                     #                  Image.Resampling.LANCZOS)
 
                     self._current_image = ImageTk.PhotoImage(image=img)
-                    self.canvas.create_image(
-                        w//2, h//2, image=self._current_image)
+                    self.canvas.create_image(w // 2, h // 2, image=self._current_image)
                     self._update_frame_counter()
             except Exception as e:
                 print(f"Error drawing frame {frame_idx}: {e}")
 
     def _update_frame_counter(self) -> None:
         """Update the frame counter display."""
-        max_frames = int(self.scale['to'])
+        max_frames = int(self.scale["to"])
         current_frame = self.scale_var.get()
         self.frame_label.config(text=f"Frame: {current_frame}/{max_frames}")
 
@@ -188,7 +194,7 @@ class FramePreview(ttk.Frame):
     def _go_to_next_frame(self) -> None:
         """Navigate to the next frame."""
         current = self.scale_var.get()
-        max_frames = int(self.scale['to'])
+        max_frames = int(self.scale["to"])
         if current < max_frames - 1:
             self.scale_var.set(current + 1)
             self._on_scale_change()
@@ -212,9 +218,11 @@ class FramePreview(ttk.Frame):
 
         def _step() -> None:
             current = self.scale_var.get()
-            max_frames = int(self.scale['to'])
+            max_frames = int(self.scale["to"])
 
-            if current >= max_frames - 1:  # Stop before reaching max to prevent overflow
+            if (
+                current >= max_frames - 1
+            ):  # Stop before reaching max to prevent overflow
                 # Stop when the maximum is reached
                 self._is_playing = False
                 self.play_btn.config(text="▶")
@@ -246,9 +254,12 @@ class FramePreview(ttk.Frame):
         self._processing_session = processing_session
         if processing_session is not None:
             self._processing_session.add_on_project_loaded_handler(
-                self._on_prosessing_session_loaded)
+                self._on_prosessing_session_loaded
+            )
 
-    def _on_prosessing_session_loaded(self, processing_session: ProcessingSession) -> None:
+    def _on_prosessing_session_loaded(
+        self, processing_session: ProcessingSession
+    ) -> None:
         """Handle processing session loaded event.
 
         Args:
