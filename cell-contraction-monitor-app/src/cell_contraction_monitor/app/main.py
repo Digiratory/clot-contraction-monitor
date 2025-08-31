@@ -46,6 +46,8 @@ class CellContractionApp(tk.Tk):
         self._create_widgets()
         self._processing_thread: Optional[threading.Thread] = None
 
+        self.protocol("WM_DELETE_WINDOW", self._on_closing)
+
     # ---------- Menu ----------
     def _create_menu(self) -> None:
         """Create the application menu bar."""
@@ -96,7 +98,8 @@ class CellContractionApp(tk.Tk):
             # Start processing in a separate thread to keep UI responsive
             self._processing_thread = threading.Thread(
                 target=self.processing_session.load_project,
-                args=(update_progress,)
+                args=(update_progress,),
+                daemon=True
             )
             self._processing_thread.start()
 
@@ -143,6 +146,10 @@ class CellContractionApp(tk.Tk):
             processing_session: The loaded processing session
         """
         self.plot_frame.update_plot(self.processing_session.get_cell_sizes())
+
+    def _on_closing(self):
+        self.destroy()
+        exit()
 
 
 if __name__ == "__main__":

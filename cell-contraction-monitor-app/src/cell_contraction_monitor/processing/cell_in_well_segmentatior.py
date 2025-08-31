@@ -89,4 +89,4 @@ class CellInWellSegmentatior():
         }
 
         mask = self.ort_session.run(None, ort_inputs_1)[0][0]
-        return np.argmax(mask, axis=0)
+        return np.argmax(mask, axis=0).astype(np.uint8)

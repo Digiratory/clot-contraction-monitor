@@ -8,6 +8,13 @@ import logging
 import cell_contraction_monitor.io.utils as io_utils
 from cell_contraction_monitor.processing.cell_in_well_segmentatior import CellInWellSegmentatior
 from cell_contraction_monitor.annotators.cell_annotator import decorate_with_cells
+from cell_contraction_monitor.io.annotation_utils import (
+    save_annotation,
+    load_annotation,
+    check_annotation_version,
+    get_last_processed_frame,
+    get_find_all_frames
+)
 
 
 class ProcessingSession:
@@ -57,26 +64,28 @@ class ProcessingSession:
             True if successful, False otherwise
         """
         try:
-            self.images = sorted(glob(os.path.join(folder_path, f"*.{ext}")))
+            self.images = get_find_all_frames(folder_path, ext)
             self.annotations = []
 
             # Initialize annotations and cell sizes
-            if len(self.images) > 0:
+            wells_founded = False
+            for i, img in enumerate(self.images):
                 # Try to find wells in the first image for reference
-                first_image = io_utils.read_image(self.images[0])
-                if first_image is not None:
-                    if self.segmentator.predefine_wells(first_image, target_count=ProcessingSession.WELLS_COUNT):
+                image_np = io_utils.read_image(img)
+                if image_np is not None:
+                    wells_founded = self.segmentator.predefine_wells(
+                        image_np, target_count=ProcessingSession.WELLS_COUNT)
+                    if wells_founded:
                         self.logger.info(
-                            f"Found wells in first image, processing {len(self.images)} images")
-                    else:
-                        self.logger.warning(
-                            "Could not predefine wells in first image")
+                            f"Found all wells in {i} image, processing {len(self.images)} images")
+                        break
                 else:
                     self.logger.error(
-                        "Failed to read first image for well detection")
+                        "Failed to read {i} image for well detection")
                     return False
-            else:
-                self.logger.warning("No images found in folder")
+            if not wells_founded:
+                self.logger.warning(
+                    "Could not predefine wells in images")
                 return False
 
             # Initialize cell sizes array
@@ -93,7 +102,11 @@ class ProcessingSession:
             return False
 
     def load_project(self, callback: Callable[[int], None]) -> bool:
-        """Load and process all images in the current session.
+        """Load and process images in the current session.
+
+        This method may loads annotations from existing JSON files and populates
+        the session with previously processed data, allowing for resuming 
+        interrupted processing sessions.
 
         Args:
             callback: Function to call with progress updates (frame index)
@@ -106,17 +119,42 @@ class ProcessingSession:
                 self.logger.warning("No images to process")
                 return False
 
+            # Check for existing annotations and resume from last processed frame
+            last_processed = get_last_processed_frame(
+                self.images[0] if self.images else "", "JPG")
+            self.logger.info(f"Resuming from frame {last_processed}")
+
             for i, img_path in enumerate(self.images):
                 try:
-                    image_np = io_utils.read_image(img_path)
-                    if image_np is None:
-                        self.logger.warning(
-                            f"Could not read image: {img_path}")
-                        continue
+                    # Check if we have existing annotation for this frame
+                    centers, well_radius, cell_masks, version = load_annotation(
+                        img_path)
 
-                    centers, well_radius, cell_masks = self._process_image(
-                        image_np)
-                    self.annotations.append((centers, well_radius, cell_masks))
+                    # If we have valid existing annotation and it's the correct version, use it
+                    if (centers is not None and well_radius is not None and
+                            cell_masks is not None and check_annotation_version(version)):
+                        self.logger.info(
+                            f"Using existing annotation for frame {i}")
+                        self.annotations.append(
+                            (centers, well_radius, cell_masks))
+                    else:
+                        # Process image normally and save annotation
+                        self.logger.info(f"Processing new frame {i}")
+                        image_np = io_utils.read_image(img_path)
+                        if image_np is None:
+                            self.logger.warning(
+                                f"Could not read image: {img_path}")
+                            continue
+                        centers, well_radius, cell_masks = self._process_image(
+                            image_np)
+                        self.annotations.append(
+                            (centers, well_radius, cell_masks))
+
+                        # Save the annotation for persistence
+                        if not save_annotation(img_path, centers, well_radius, cell_masks):
+                            self.logger.warning(
+                                f"Failed to save annotation for frame {i}")
+
                     if self.cell_sizes is not None and i < len(self.cell_sizes):
                         # Sum over height and width
                         self.cell_sizes[i] = np.sum(cell_masks, axis=(1, 2))
