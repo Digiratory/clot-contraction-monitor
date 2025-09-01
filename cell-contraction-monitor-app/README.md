@@ -74,5 +74,50 @@ The project requires the following key dependencies:
 4. Run tests to ensure everything works
 5. Submit a pull request
 
+## Headless Mode Usage
+
+The application supports headless mode for batch processing without the GUI interface. This is useful for automated workflows and server environments.
+
+### Command Line Options
+
+```bash
+python -m cell_contraction_monitor.app.main --help
+```
+
+### Running in Headless Mode
+
+```bash
+python -m cell_contraction_monitor.app.main --input-folder /path/to/images --output-csv results.csv
+```
+
+### Arguments
+
+- `--headless`: Enable headless mode (no GUI)
+- `--input-folder`: Path to folder containing image files (required for headless mode)
+- `--output-csv`: Output CSV file path (default: results.csv)
+
+### CSV Output Format
+
+The CSV file contains:
+- **Rows**: Each row represents one image/sample
+- **Columns**: First column is "Sample" (image filename), followed by Well_1, Well_2, ..., Well_40
+- **Values**: Cell size measurements for each well in each image
+
+Example CSV structure:
+```
+Sample,Well_1,Well_2,Well_3,...,Well_40
+image001,123.45,234.56,345.67,...,456.78
+image002,111.11,222.22,333.33,...,444.44
+...
+```
+
+### Supported Image Formats
+
+The application automatically detects and processes common image formats including:
+- JPG/JPEG
+- PNG
+- TIFF
+- BMP
+
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
