@@ -1,11 +1,10 @@
 # cell-contraction-monitor-app/src/cell_contraction_monitor/app/main.py
 import argparse
-import csv
 import os
 import sys
 
-import numpy as np
 from cell_contraction_monitor.app.app import CellContractionApp
+from cell_contraction_monitor.io import export_to_csv
 from cell_contraction_monitor.processing.processing_session import ProcessingSession
 
 
@@ -49,33 +48,6 @@ def run_headless(input_folder: str, output_csv: str) -> None:
     # Export to CSV
     export_to_csv(cell_sizes, output_csv, processing_session.images)
     print(f"Results exported to: {output_csv}")
-
-
-def export_to_csv(cell_sizes: np.ndarray, output_path: str, image_paths: list) -> None:
-    """Export cell size data to CSV format.
-
-    Args:
-        cell_sizes: Array of cell sizes with shape (num_images, num_wells)
-        output_path: Path to save the CSV file
-        image_paths: List of image file paths for row labels
-    """
-    num_images, num_wells = cell_sizes.shape
-
-    # Create column headers (Well_1, Well_2, ..., Well_N)
-    headers = ["Sample"] + [f"Well_{i+1}" for i in range(num_wells)]
-
-    with open(output_path, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-
-        # Write headers
-        writer.writerow(headers)
-
-        # Write data rows
-        for i in range(num_images):
-            # Use image filename as sample identifier
-            sample_name = os.path.splitext(os.path.basename(image_paths[i]))[0]
-            row = [sample_name] + cell_sizes[i].tolist()
-            writer.writerow(row)
 
 
 def main():

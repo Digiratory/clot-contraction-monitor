@@ -13,8 +13,9 @@ Enhancement and optimization phase: transforming prototype into production-ready
 ## Active Development Streams
 1. **Testing**: Unit and integration test coverage expansion
 2. **Performance**: GPU acceleration, multi-threading, memory optimization
-3. **UX**: Interactive visualization, progress feedback, batch processing
+3. **UX**: Interactive visualization, progress feedback, batch processing, CSV export functionality
 4. **Validation**: Ground truth comparison, reproducibility testing
+5. **Code Organization**: IO utilities refactoring, menu system improvements
 
 ## Key Technical Decisions
 - **Streaming Processing**: For large datasets beyond RAM limits

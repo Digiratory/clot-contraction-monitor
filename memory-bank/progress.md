@@ -13,6 +13,9 @@
 - Data processing for well detection and contraction analysis
 - File I/O support for common scientific formats
 - JSON-based annotation system
+- CSV export functionality with menu integration
+- Code organization improvements (IO utilities refactoring)
+- Tkinter menu system enhancements
 
 ### 🟡 IN PROGRESS
 - Testing infrastructure expansion

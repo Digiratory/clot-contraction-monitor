@@ -12,6 +12,7 @@ from .annotation_utils import (
     load_annotation,
     save_annotation,
 )
+from .csv_utils import export_to_csv
 
 __all__ = [
     "save_annotation",
@@ -22,4 +23,5 @@ __all__ = [
     "get_frame_index_from_path",
     "clear_annotations",
     "CURRENT_VERSION",
+    "export_to_csv",
 ]

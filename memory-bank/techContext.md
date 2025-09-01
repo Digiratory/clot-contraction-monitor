@@ -6,7 +6,7 @@
 - **Computer Vision**: OpenCV 4.8+ for image processing
 - **Scientific Libraries**: NumPy, SciPy
 - **UI**: Tkinter for cross-platform GUI, Matplotlib for visualization
-- **Data**: JSON-based annotations, multiple format support
+- **Data**: JSON-based annotations, CSV export, multiple format support
 
 ## Development Tools
 - **Package Management**: Poetry for dependencies and distribution
