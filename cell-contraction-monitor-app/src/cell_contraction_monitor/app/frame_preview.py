@@ -23,12 +23,30 @@ class FramePreview(ttk.Frame):
         self.zoom_var = tk.DoubleVar(value=1.0)
 
         # --- Canvas for the preview -------------------------------------------------
+        # Create a frame to hold the canvas and scrollbars
+        self.canvas_frame = tk.Frame(self)
+        self.canvas_frame.pack(fill="both", expand=True)
+
+        # Create scrollbars
+        self.h_scrollbar = tk.Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL)
+        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.v_scrollbar = tk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
+        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Create canvas with scrollbars
         self.canvas = tk.Canvas(
-            self,
+            self.canvas_frame,
             # background="#2d3436",
             highlightthickness=0,
+            xscrollcommand=self.h_scrollbar.set,
+            yscrollcommand=self.v_scrollbar.set,
         )
-        self.canvas.pack(fill="both", expand=True)
+        self.canvas.pack(side=tk.LEFT, fill="both", expand=True)
+
+        # Configure scrollbars to control canvas
+        self.h_scrollbar.config(command=self.canvas.xview)
+        self.v_scrollbar.config(command=self.canvas.yview)
 
         # --- Frame counter display --------------------------------------------------
         self.frame_counter_frame = tk.Frame(
@@ -100,7 +118,7 @@ class FramePreview(ttk.Frame):
         ).pack(side=tk.LEFT)
         self.zoom_scale = ttk.Scale(
             zoom_frame,
-            from_=0.5,
+            from_=1.0,
             to=3.0,
             orient="horizontal",
             variable=self.zoom_var,
@@ -153,7 +171,6 @@ class FramePreview(ttk.Frame):
             frame_idx: Index of the frame to draw
         """
         self.canvas.delete("all")
-        w, h = self.canvas.winfo_width(), self.canvas.winfo_height()
 
         # Get image data from processing session
         if self._processing_session is not None:
@@ -164,18 +181,63 @@ class FramePreview(ttk.Frame):
                 if img_array is not None:
                     # Convert numpy array to PIL Image for display
                     img = Image.fromarray(img_array)
-                    img.thumbnail((w, h), Image.Resampling.LANCZOS)
+
+                    # Store original dimensions
+                    original_width, original_height = img.size
+
+                    # Get canvas dimensions
+                    canvas_width = self.canvas.winfo_width()
+                    canvas_height = self.canvas.winfo_height()
+
+                    # Calculate scale factor to fit entire image in canvas (for 100% zoom)
+                    if (
+                        original_width > 0
+                        and original_height > 0
+                        and canvas_width > 0
+                        and canvas_height > 0
+                    ):
+                        width_scale = canvas_width / original_width
+                        height_scale = canvas_height / original_height
+                        fit_scale = min(width_scale, height_scale)
+                    else:
+                        fit_scale = 1.0
+
+                    # Apply zoom: 100% zoom = fit-to-canvas, other levels are relative to that
+                    if self._zoom_level == 1.0:
+                        # 100% zoom: show entire image fitted to canvas
+                        display_scale = fit_scale
+                    else:
+                        # Other zoom levels: relative to the fit-to-canvas scale
+                        display_scale = fit_scale * self._zoom_level
+
+                    # Calculate final display dimensions
+                    display_w = int(original_width * display_scale)
+                    display_h = int(original_height * display_scale)
+
+                    # Resize image
+                    if display_w > 0 and display_h > 0:
+                        img = img.resize(
+                            (display_w, display_h), Image.Resampling.LANCZOS
+                        )
 
                     self._image_width, self._image_height = img.size
 
-                    # Apply zoom
-                    # zoomed_w = int(self._image_width * self._zoom_level)
-                    # zoomed_h = int(self._image_height * self._zoom_level)
-                    # img = img.resize((zoomed_w, zoomed_h),
-                    #                  Image.Resampling.LANCZOS)
-
                     self._current_image = ImageTk.PhotoImage(image=img)
-                    self.canvas.create_image(w // 2, h // 2, image=self._current_image)
+
+                    # Center the image on the canvas
+                    x = canvas_width // 2
+                    y = canvas_height // 2
+
+                    self.canvas.create_image(x, y, image=self._current_image)
+
+                    # Configure scroll region - only enable scrolling if image is larger than canvas
+                    if display_w > canvas_width or display_h > canvas_height:
+                        self.canvas.config(scrollregion=(0, 0, display_w, display_h))
+                    else:
+                        self.canvas.config(
+                            scrollregion=(0, 0, canvas_width, canvas_height)
+                        )
+
                     self._update_frame_counter()
             except Exception as e:
                 print(f"Error drawing frame {frame_idx}: {e}")
