@@ -31,6 +31,20 @@ Processing sessions encapsulate the entire analysis workflow, maintaining state 
 ### 4. Observer Pattern for UI Updates
 Real-time updates to visualizations and progress indicators use observer patterns to maintain loose coupling between processing and UI components.
 
+### 5. Error Handling and Logging Pattern
+Comprehensive error handling with logging throughout the application:
+- Logging configuration for different severity levels
+- Exception handling in critical paths with graceful degradation
+- User-friendly error messages in GUI components
+- Debug information for troubleshooting
+
+### 6. Caching and Persistence Pattern
+Annotation caching system for processed frames:
+- JSON-based annotation storage alongside image files
+- Resume capability for interrupted processing sessions
+- Version checking for annotation compatibility
+- Automatic cache invalidation for updated processing logic
+
 ## Component Relationships
 
 ### Core Modules

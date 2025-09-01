@@ -1,10 +1,10 @@
 # Project Brief: Cells Contraction Monitor
 
 ## Project Overview
-Cells Contraction Monitor is a Python application designed to analyze and monitor cell contraction patterns in biological experiments. The system processes video data or sequenses of photos to track cell measure contraction frequencies, and provide quantitative analysis of cellular dynamics.
+Cells Contraction Monitor is a Python application designed to analyze and monitor cell contraction patterns in biological experiments. The system processes video data or sequences of photos to track cell contraction frequencies, and provide quantitative analysis of cellular dynamics.
 
 ## Core Purpose
-To provide researchers and scientists with tools to automatically analyze cell contraction data from videos or image sequenses, enabling efficient quantification of cellular behavior patterns.
+To provide researchers and scientists with tools to automatically analyze cell contraction data from videos or image sequences, enabling efficient quantification of cellular behavior patterns.
 
 ## Key Objectives
 1. Process image data from biological experiments
