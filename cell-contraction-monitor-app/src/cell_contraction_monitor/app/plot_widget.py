@@ -207,13 +207,7 @@ class PlotFrame(ttk.Frame):
                             markersize=4,
                             color=colors[i],
                         )
-                    self.ax.legend(
-                        bbox_to_anchor=(1.05, 1),
-                        loc="upper left",
-                        # facecolor="#2d3436",
-                        # edgecolor="#4a5568",
-                        # labelcolor="#ffffff"
-                    )
+                    self.ax.legend(loc="best")
                 elif grouping_option == "rows":
                     # Group by rows and plot mean with std deviation
                     grouped_data = self._group_by_rows(data_array)
@@ -230,7 +224,7 @@ class PlotFrame(ttk.Frame):
                             alpha=0.2,
                             color=color,
                         )
-                    self.ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+                    self.ax.legend(loc="best")
                 elif grouping_option == "columns":
                     # Group by columns and plot mean with std deviation
                     grouped_data = self._group_by_columns(data_array)
@@ -247,7 +241,7 @@ class PlotFrame(ttk.Frame):
                             alpha=0.2,
                             color=color,
                         )
-                    self.ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+                    self.ax.legend(loc="best")
             elif len(data_array.shape) == 1:
                 # Single series of data
                 self.ax.plot(data_array, marker="o", markersize=4)
