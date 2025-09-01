@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+from cell_contraction_monitor.app.radio_group_widget import RadioGroupWidget
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 
@@ -75,82 +76,48 @@ class PlotFrame(ttk.Frame):
         self.control_frame = ttk.Frame(self)
         self.control_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
-        # Grouping radio buttons
-        self.grouping_var = tk.StringVar(value="all")
-        grouping_frame = ttk.LabelFrame(
-            self.control_frame, text="Data Grouping", padding=5
+        # Grouping radio buttons using RadioGroupWidget
+        grouping_options = [
+            ("All Wells", "all"),
+            ("Group by Rows", "rows"),
+            ("Group by Columns", "columns"),
+        ]
+        self.grouping_widget = RadioGroupWidget(
+            self.control_frame,
+            title="Data Grouping",
+            options=grouping_options,
+            default_value="all",
+            callback=self._on_grouping_changed,
         )
-        grouping_frame.pack(side=tk.LEFT, padx=5)
+        self.grouping_widget.pack(side=tk.LEFT, padx=5)
 
-        ttk.Radiobutton(
-            grouping_frame,
-            text="All Wells",
-            variable=self.grouping_var,
-            value="all",
-            command=self._on_grouping_changed,
-        ).pack(anchor=tk.W)
-        ttk.Radiobutton(
-            grouping_frame,
-            text="Group by Rows",
-            variable=self.grouping_var,
-            value="rows",
-            command=self._on_grouping_changed,
-        ).pack(anchor=tk.W)
-        ttk.Radiobutton(
-            grouping_frame,
-            text="Group by Columns",
-            variable=self.grouping_var,
-            value="columns",
-            command=self._on_grouping_changed,
-        ).pack(anchor=tk.W)
-
-        # Smoothing radio buttons
-        self.smoothing_var = tk.StringVar(value="none")
-        smoothing_frame = ttk.LabelFrame(
-            self.control_frame, text="Smoothing", padding=5
+        # Smoothing radio buttons using RadioGroupWidget
+        smoothing_options = [
+            ("No filtering", "none"),
+            ("3 samples", "3"),
+            ("5 samples", "5"),
+            ("7 samples", "7"),
+        ]
+        self.smoothing_widget = RadioGroupWidget(
+            self.control_frame,
+            title="Smoothing",
+            options=smoothing_options,
+            default_value="none",
+            callback=self._on_smoothing_changed,
         )
-        smoothing_frame.pack(side=tk.LEFT, padx=5)
-
-        ttk.Radiobutton(
-            smoothing_frame,
-            text="No filtering",
-            variable=self.smoothing_var,
-            value="none",
-            command=self._on_smoothing_changed,
-        ).pack(anchor=tk.W)
-        ttk.Radiobutton(
-            smoothing_frame,
-            text="3 samples",
-            variable=self.smoothing_var,
-            value="3",
-            command=self._on_smoothing_changed,
-        ).pack(anchor=tk.W)
-        ttk.Radiobutton(
-            smoothing_frame,
-            text="5 samples",
-            variable=self.smoothing_var,
-            value="5",
-            command=self._on_smoothing_changed,
-        ).pack(anchor=tk.W)
-        ttk.Radiobutton(
-            smoothing_frame,
-            text="7 samples",
-            variable=self.smoothing_var,
-            value="7",
-            command=self._on_smoothing_changed,
-        ).pack(anchor=tk.W)
+        self.smoothing_widget.pack(side=tk.LEFT, padx=5)
 
         # Pack the toolbar first, then the canvas
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    def _on_grouping_changed(self):
+    def _on_grouping_changed(self, value=None):
         """Handle grouping option changes."""
         # Replot with current data using new grouping
         if hasattr(self, "_current_data") and self._current_data is not None:
             self.update_plot(self._current_data)
 
-    def _on_smoothing_changed(self):
+    def _on_smoothing_changed(self, value=None):
         """Handle smoothing option changes."""
         # Replot with current data using new smoothing
         if hasattr(self, "_current_data") and self._current_data is not None:
@@ -165,7 +132,7 @@ class PlotFrame(ttk.Frame):
         Returns:
             Smoothed numpy array
         """
-        smoothing_option = self.smoothing_var.get()
+        smoothing_option = self.smoothing_widget.get_value()
         if smoothing_option == "none":
             return data_array
 
@@ -288,7 +255,7 @@ class PlotFrame(ttk.Frame):
             data_array = self._apply_smoothing(data_array)
 
             # Get current grouping option
-            grouping_option = self.grouping_var.get()
+            grouping_option = self.grouping_widget.get_value()
 
             if len(data_array.shape) == 2:
                 # Multiple wells per frame
