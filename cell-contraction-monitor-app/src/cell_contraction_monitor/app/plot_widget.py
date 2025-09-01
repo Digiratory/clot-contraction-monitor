@@ -104,6 +104,42 @@ class PlotFrame(ttk.Frame):
             command=self._on_grouping_changed,
         ).pack(anchor=tk.W)
 
+        # Smoothing radio buttons
+        self.smoothing_var = tk.StringVar(value="none")
+        smoothing_frame = ttk.LabelFrame(
+            self.control_frame, text="Smoothing", padding=5
+        )
+        smoothing_frame.pack(side=tk.LEFT, padx=5)
+
+        ttk.Radiobutton(
+            smoothing_frame,
+            text="No filtering",
+            variable=self.smoothing_var,
+            value="none",
+            command=self._on_smoothing_changed,
+        ).pack(anchor=tk.W)
+        ttk.Radiobutton(
+            smoothing_frame,
+            text="3 samples",
+            variable=self.smoothing_var,
+            value="3",
+            command=self._on_smoothing_changed,
+        ).pack(anchor=tk.W)
+        ttk.Radiobutton(
+            smoothing_frame,
+            text="5 samples",
+            variable=self.smoothing_var,
+            value="5",
+            command=self._on_smoothing_changed,
+        ).pack(anchor=tk.W)
+        ttk.Radiobutton(
+            smoothing_frame,
+            text="7 samples",
+            variable=self.smoothing_var,
+            value="7",
+            command=self._on_smoothing_changed,
+        ).pack(anchor=tk.W)
+
         # Pack the toolbar first, then the canvas
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -113,6 +149,63 @@ class PlotFrame(ttk.Frame):
         # Replot with current data using new grouping
         if hasattr(self, "_current_data") and self._current_data is not None:
             self.update_plot(self._current_data)
+
+    def _on_smoothing_changed(self):
+        """Handle smoothing option changes."""
+        # Replot with current data using new smoothing
+        if hasattr(self, "_current_data") and self._current_data is not None:
+            self.update_plot(self._current_data)
+
+    def _apply_smoothing(self, data_array):
+        """Apply moving average smoothing to the data array.
+
+        Args:
+            data_array: Numpy array to smooth
+
+        Returns:
+            Smoothed numpy array
+        """
+        smoothing_option = self.smoothing_var.get()
+        if smoothing_option == "none":
+            return data_array
+
+        window_size = int(smoothing_option)
+        if window_size < 2:
+            return data_array
+
+        # Apply moving average filter without zero-padding artifacts
+        kernel = np.ones(window_size) / window_size
+        if len(data_array.shape) == 1:
+            # 1D array
+            smoothed = np.convolve(data_array, kernel, mode="valid")
+            # Pad the edges to maintain original length
+            pad_left = (window_size - 1) // 2
+            pad_right = window_size - 1 - pad_left
+
+            # Use edge values for padding instead of zeros
+            left_pad = np.full(pad_left, data_array[0])
+            right_pad = np.full(pad_right, data_array[-1])
+
+            return np.concatenate([left_pad, smoothed, right_pad])
+        elif len(data_array.shape) == 2:
+            # 2D array - apply smoothing to each column (time series for each well)
+            smoothed = np.zeros_like(data_array)
+            for i in range(data_array.shape[1]):
+                column_data = data_array[:, i]
+                smoothed_col = np.convolve(column_data, kernel, mode="valid")
+
+                # Pad the edges to maintain original length
+                pad_left = (window_size - 1) // 2
+                pad_right = window_size - 1 - pad_left
+
+                # Use edge values for padding instead of zeros
+                left_pad = np.full(pad_left, column_data[0])
+                right_pad = np.full(pad_right, column_data[-1])
+
+                smoothed[:, i] = np.concatenate([left_pad, smoothed_col, right_pad])
+            return smoothed
+        else:
+            return data_array
 
     def _group_by_rows(self, data_array):
         """Group wells by rows (5 rows of 8 wells each)."""
@@ -190,6 +283,9 @@ class PlotFrame(ttk.Frame):
 
             # Convert to numpy array for consistent handling
             data_array = np.array(data)
+
+            # Apply smoothing to the data
+            data_array = self._apply_smoothing(data_array)
 
             # Get current grouping option
             grouping_option = self.grouping_var.get()
