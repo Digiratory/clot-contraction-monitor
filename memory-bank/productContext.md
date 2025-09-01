@@ -1,26 +1,30 @@
 # Product Context: Cells Contraction Monitor
 
-## Problem Statement
-Biological researchers studying cellular behavior face significant challenges in quantitatively analyzing cell contraction patterns. Traditional manual analysis methods are time-consuming, error-prone, and lack consistency. There's a critical need for automated tools that can process large volumes of experimental data efficiently while maintaining scientific accuracy.
+## Market Opportunity
+Biological researchers face challenges with manual cell contraction analysis: time-consuming, error-prone, and unscalable. Traditional methods involve hours of microscopy and inconsistent measurements.
 
 ## Core Problems Solved
-1. **Manual Analysis Bottleneck**: Eliminates the need for researchers to manually segment and measure cell contractions
-2. **Inconsistent Results**: Provides standardized, reproducible analysis methods
-3. **Time Investment**: Reduces hours of manual work to minutes of automated processing
-4. **Quantitative Accuracy**: Delivers precise measurements that are difficult to achieve through visual inspection
+1. **Automation**: AI-powered detection replaces manual counting
+2. **Standardization**: Consistent algorithms ensure reproducible results
+3. **Scalability**: High-throughput processing enables larger studies
+4. **Real-time Feedback**: Immediate results for rapid iteration
+5. **Integration**: Support for common lab formats and workflows
 
-## User Experience Goals
-- **Intuitive Workflow**: Simple step-by-step process from data import to results
-- **Visual Feedback**: Real-time previews and interactive analysis tools
-- **Flexible Input**: Support for various image formats and experimental setups
-- **Comprehensive Output**: Detailed reports and exportable data for further analysis
-- **Reliable Performance**: Consistent results across different datasets and experimental conditions
+## User Experience Vision
+Intuitive workflow: drag-and-drop import, one-click analysis, live preview, interactive exploration, and easy export.
 
 ## Value Proposition
-Cells Contraction Monitor transforms tedious manual cell analysis into an automated, accurate, and efficient process, enabling researchers to focus on scientific interpretation rather than data processing.
+- **Researchers**: Save time, improve accuracy, publish more
+- **Institutions**: Increase productivity, standardize results
+- **Community**: Accelerate discovery, improve reproducibility
 
-## Success Scenarios
-- Researchers can process an entire experiment's worth of data in minutes
-- Consistent, reproducible results across different users and time periods
-- Integration with existing laboratory workflows and data management systems
-- Enablement of larger-scale studies that would be impractical with manual methods
+## Competitive Landscape
+- Manual methods: slow and inconsistent
+- Basic tools: limited automation
+- Proprietary systems: expensive and inflexible
+- Academic tools: variable quality
+
+Unique advantages: biology-focused, open-source, cross-platform, extensible.
+
+## Future Vision
+Enhanced features, multi-modal analysis, collaboration tools, cloud processing.

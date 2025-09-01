@@ -1,28 +1,46 @@
 # Project Brief: Cells Contraction Monitor
 
-## Project Overview
-Cells Contraction Monitor is a Python application designed to analyze and monitor cell contraction patterns in biological experiments. The system processes video data or sequences of photos to track cell contraction frequencies, and provide quantitative analysis of cellular dynamics.
+## Executive Summary
+Cells Contraction Monitor is an open-source Python application that automates analysis of cellular contraction patterns using computer vision and neural networks, transforming manual hours into automated minutes of reproducible results.
 
-## Core Purpose
-To provide researchers and scientists with tools to automatically analyze cell contraction data from videos or image sequences, enabling efficient quantification of cellular behavior patterns.
+## Project Overview
+The application processes time-series image data to:
+- Detect and segment cells in multi-well plates
+- Track contraction dynamics over time
+- Generate quantitative metrics (frequency, amplitude, patterns)
+- Provide interactive visualization
+- Export results for statistical analysis
+
+## Core Purpose & Mission
+**Mission**: Democratize cellular analysis with accessible, automated tools delivering scientific accuracy.
+
+**Vision**: Standard tool for cellular contraction analysis in biological research.
 
 ## Key Objectives
-1. Process image data from biological experiments
-2. Identify and segment individual cells within wells using neural network.
-3. Measure and analyze cell contraction patterns
-4. Provide visualization tools for data analysis
-5. Export quantitative results for further research
+1. Automated cell detection with neural networks
+2. Dynamic tracking algorithms
+3. Quantitative analysis metrics
+4. Interactive visualization tools
+5. Data export capabilities
+6. Performance optimization
 
-## Target Users
-- Biological researchers
-- Laboratory scientists
-- Medical researchers studying cellular behavior
+## Target Users & Use Cases
+- Cell Biologists studying mechanics
+- Pharmacologists analyzing drug effects
+- Toxicologists assessing responses
+- Medical Researchers investigating diseases
 
-## Success Metrics
-- Accurate wells detection and cell segmentation
-- Reliable contraction measurement algorithms
-- User-friendly interface for data analysis
-- Efficient processing of large video datasets
+Use cases include drug screening, disease modeling, basic research, and quality control.
 
 ## Project Scope
-The system focuses on analyzing cell contraction in controlled laboratory environments, specifically designed for well-based experimental setups commonly used in biological research.
+### In Scope
+- Cell contraction analysis in standard formats
+- Common image/video formats (TIFF, JPEG, PNG)
+- Cross-platform compatibility (Windows, macOS, Linux)
+- Real-time processing
+
+### Out of Scope
+- Non-contraction behaviors
+- Non-standard geometries
+- Proprietary integrations
+- Mobile support

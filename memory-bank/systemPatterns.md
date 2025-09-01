@@ -1,77 +1,46 @@
 # System Patterns: Cells Contraction Monitor
 
 ## Architecture Overview
-The system follows a modular architecture with clear separation of concerns:
-- **Data Processing Layer**: Handles input data loading and preprocessing
-- **Analysis Layer**: Contains core algorithms for cell segmentation and contraction analysis
-- **Visualization Layer**: Provides interactive tools for data exploration and result visualization
-- **Application Layer**: Manages user interface and workflow orchestration
+Modular design with separation of concerns, prioritizing scientific accuracy and extensibility.
+
+## Core Principles
+- Scientific accuracy first
+- Modular extensibility via plugins
+- Performance optimization for large datasets
+- User-centric design
+- Cross-platform compatibility
+
+## Layered Architecture
+- **Core Engine**: Neural networks, image processing, math libraries
+- **Data Access**: File I/O, annotation persistence, caching
+- **Processing**: Preprocessing, segmentation, tracking, feature extraction
+- **Analysis**: Statistical analysis, pattern recognition, quality metrics
+- **Visualization**: Interactive plots, previews, progress monitoring
+- **Application**: Workflow orchestration, UI, session management
 
 ## Key Design Patterns
-
-### 1. Pipeline Processing Pattern
-Data flows through a well-defined pipeline:
-```
-Input Data → Preprocessing → Well Detection → Cell Segmentation → Contraction Analysis → Results
-```
-Each stage is modular and can be independently tested and optimized.
-
-### 2. Plugin/Strategy Pattern for Annotators
-Different annotation approaches are implemented as pluggable components, allowing for:
-- Multiple cell segmentation algorithms
-- Different well detection methods
-- Extensible analysis techniques
-
-### 3. Session-Based Processing
-Processing sessions encapsulate the entire analysis workflow, maintaining state and enabling:
-- Resume capability
-- Batch processing
-- Consistent parameter management
-
-### 4. Observer Pattern for UI Updates
-Real-time updates to visualizations and progress indicators use observer patterns to maintain loose coupling between processing and UI components.
-
-### 5. Error Handling and Logging Pattern
-Comprehensive error handling with logging throughout the application:
-- Logging configuration for different severity levels
-- Exception handling in critical paths with graceful degradation
-- User-friendly error messages in GUI components
-- Debug information for troubleshooting
-
-### 6. Caching and Persistence Pattern
-Annotation caching system for processed frames:
-- JSON-based annotation storage alongside image files
-- Resume capability for interrupted processing sessions
-- Version checking for annotation compatibility
-- Automatic cache invalidation for updated processing logic
+1. **Pipeline Processing**: Modular stages with validation and error handling
+2. **Strategy Pattern**: Interchangeable analysis algorithms
+3. **Session State**: Persistent processing state with resume capability
+4. **Observer Pattern**: Real-time updates and event handling
+5. **Repository Pattern**: Data persistence abstraction
+6. **Factory Pattern**: Dynamic component creation
 
 ## Component Relationships
+Core modules: app/, processing/, io/, utils/ with clear dependencies and data flow from input to visualization.
 
-### Core Modules
-- `processing/`: Contains main analysis algorithms
-- `annotators/`: Pluggable annotation and segmentation tools
-- `io/`: Data input/output utilities
-- `app/`: Application interface and visualization components
+## Technical Decisions
+- **ONNX Runtime**: Cross-platform neural network inference
+- **Streaming Processing**: Memory-efficient handling of large datasets
+- **Comprehensive Error Handling**: Graceful degradation and recovery
+- **Platform Optimizations**: Native performance and UI per platform
 
-### Data Flow
-1. **Input Stage**: Raw image data is loaded and preprocessed
-2. **Segmentation Stage**: Wells and cells are identified using neural network models
-3. **Analysis Stage**: Contraction patterns are measured and quantified
-4. **Output Stage**: Results are visualized and exported
+## Performance Optimization
+- Vectorization and SIMD instructions
+- Multi-threading and async I/O
+- Hardware acceleration (GPU, SIMD)
 
-## Critical Implementation Paths
-
-### Neural Network Integration
-- ONNX model integration for cell segmentation
-- Preprocessing pipelines optimized for model input requirements
-- Post-processing for converting model outputs to usable data structures
-
-### Performance Optimization
-- Batch processing for large datasets
-- Memory-efficient image handling
-- Parallel processing where applicable
-
-### User Experience
-- Interactive frame preview for parameter tuning
-- Real-time plotting of contraction data
-- Intuitive workflow management
+## Quality Assurance
+- Unit and integration testing
+- Performance benchmarking
+- Scientific validation against ground truth
