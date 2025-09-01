@@ -11,6 +11,24 @@ if os.name == "nt":
 import onnxruntime
 
 
+def get_onnx_providers():
+    available_providers = onnxruntime.get_available_providers()
+    providers = []
+    provider_options = []
+
+    if "OpenVINOExecutionProvider" in available_providers:
+        from openvino import Core
+
+        ov_devs = Core().available_devices
+
+        providers.append("OpenVINOExecutionProvider")
+        provider_options.append({"device_type": "GPU" if "GPU" in ov_devs else "AUTO"})
+
+    providers.append("CPUExecutionProvider")
+    provider_options.append({})
+    return providers, provider_options
+
+
 class CellInWellSegmentatior:
     TARGET_SHAPE = 384
 
@@ -21,20 +39,12 @@ class CellInWellSegmentatior:
         self.sess_options.graph_optimization_level = (
             onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
         )
-        from openvino import Core
 
-        ov_devs = Core().available_devices
-
+        providers, provider_options = get_onnx_providers()
         self.ort_session = onnxruntime.InferenceSession(
             self._onnx_model_path,
-            providers=[
-                # "OpenVINOExecutionProvider",
-                "CPUExecutionProvider"
-            ],
-            provider_options=[
-                # {'device_type': "GPU" if "GPU" in ov_devs else "AUTO"},
-                {}
-            ],
+            providers=providers,
+            provider_options=provider_options,
             sess_options=self.sess_options,
         )
         self.centers = None
@@ -81,6 +91,9 @@ class CellInWellSegmentatior:
         well_image = cv2.copyMakeBorder(
             well_image, top, bottom, top, bottom, cv2.BORDER_CONSTANT, None, 0
         )
+        well_image = cv2.resize(
+            well_image, (192, 192), dst=well_image, interpolation=cv2.INTER_CUBIC
+        )
         well_image = well_image.astype(np.float32) / 255.0
         return well_image
 
@@ -90,4 +103,11 @@ class CellInWellSegmentatior:
         }
 
         mask = self.ort_session.run(None, ort_inputs_1)[0][0]
-        return np.argmax(mask, axis=0).astype(np.uint8)
+        mask = np.argmax(mask, axis=0).astype(np.uint8)
+        mask = cv2.resize(
+            mask,
+            (CellInWellSegmentatior.TARGET_SHAPE, CellInWellSegmentatior.TARGET_SHAPE),
+            dst=mask,
+            interpolation=cv2.INTER_NEAREST,
+        )
+        return mask

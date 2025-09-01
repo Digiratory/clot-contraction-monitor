@@ -107,7 +107,7 @@ class ProcessingSession:
             self.logger.error(f"Error in select_folder: {e}")
             return False
 
-    def load_project(self, callback: Callable[[int], None]) -> bool:
+    def load_project(self, callback: Callable[[int, bool, bool], None]) -> bool:
         """Load and process images in the current session.
 
         This method may loads annotations from existing JSON files and populates
@@ -115,7 +115,7 @@ class ProcessingSession:
         interrupted processing sessions.
 
         Args:
-            callback: Function to call with progress updates (frame index)
+            callback: Function to call with progress updates (frame index, is frame from cache, is last frame)
 
         Returns:
             True if successful, False otherwise
@@ -132,6 +132,7 @@ class ProcessingSession:
             self.logger.info(f"Resuming from frame {last_processed}")
 
             for i, img_path in enumerate(self.images):
+                from_cache = False
                 try:
                     # Check if we have existing annotation for this frame
                     centers, well_radius, cell_masks, version = load_annotation(
@@ -147,6 +148,7 @@ class ProcessingSession:
                     ):
                         self.logger.info(f"Using existing annotation for frame {i}")
                         self.annotations.append((centers, well_radius, cell_masks))
+                        from_cache = True
                     else:
                         # Process image normally and save annotation
                         self.logger.info(f"Processing new frame {i}")
@@ -168,7 +170,8 @@ class ProcessingSession:
                     if self.cell_sizes is not None and i < len(self.cell_sizes):
                         # Sum over height and width
                         self.cell_sizes[i] = np.sum(cell_masks, axis=(1, 2))
-                    callback(i)
+
+                    callback(i, from_cache, i == len(self.images) - 1)
                 except Exception as e:
                     self.logger.error(f"Error processing image {img_path}: {e}")
                     continue

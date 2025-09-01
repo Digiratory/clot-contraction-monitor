@@ -1,4 +1,5 @@
 # cell-contraction-monitor-app/src/cell_contraction_monitor/app/main.py
+import os
 import threading
 import tkinter as tk
 from tkinter import filedialog, ttk
@@ -17,10 +18,12 @@ class CellContractionApp(tk.Tk):
     interaction components.
     """
 
+    APPLICATION_NAME = "Cell Contraction Monitor"
+
     def __init__(self) -> None:
         """Initialize the main application window."""
         super().__init__()
-        self.title("Cell Contraction Monitor")
+        self.title(CellContractionApp.APPLICATION_NAME)
         self.geometry("1000x700")
         self.minsize(800, 600)
 
@@ -86,20 +89,33 @@ class CellContractionApp(tk.Tk):
             )
             progress_bar.pack(side=tk.RIGHT, padx=5, pady=2)
 
-            def update_progress(new_progress: int) -> None:
+            def update_progress(
+                new_progress: int, from_cache: bool, is_last: bool
+            ) -> None:
                 """Update progress bar and status text during processing."""
                 nonlocal progress_var
+                new_progress += 1
                 progress_var.set(new_progress)
-                self.status_text.set(
-                    f"File processing: {new_progress}/{self.processing_session.frame_count()}"
-                )
-                self.plot_frame.update_plot(self.processing_session.get_cell_sizes())
+
+                if new_progress != self.processing_session.frame_count():
+                    self.status_text.set(
+                        f"File processing: {new_progress}/{self.processing_session.frame_count()}"
+                    )
+                else:
+                    self.status_text.set(f"Ready")
+                if not from_cache or is_last:
+                    self.plot_frame.update_plot(
+                        self.processing_session.get_cell_sizes()
+                    )
 
             # Start processing in a separate thread to keep UI responsive
             self._processing_thread = threading.Thread(
                 target=self.processing_session.load_project,
                 args=(update_progress,),
                 daemon=True,
+            )
+            self.title(
+                f"{CellContractionApp.APPLICATION_NAME}: { os.path.split(folder)[1]}"
             )
             self._processing_thread.start()
 
