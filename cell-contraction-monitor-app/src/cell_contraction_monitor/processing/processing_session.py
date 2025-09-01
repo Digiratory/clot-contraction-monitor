@@ -1,7 +1,7 @@
 import logging
 import os
 from glob import glob
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import cell_contraction_monitor.io.utils as io_utils
 import cv2
@@ -28,6 +28,7 @@ class ProcessingSession:
     """
 
     WELLS_COUNT = 40
+    TARGET_WIDTH = 960
     logger = logging.getLogger(__name__)
 
     def __init__(self) -> None:
@@ -47,6 +48,7 @@ class ProcessingSession:
         # centers, well_radius, cell_masks
         self.annotations: List[Tuple[np.ndarray, float, List[np.ndarray]]] = []
         self.cell_sizes: Optional[np.ndarray] = None
+        self.image_cache: Dict[Tuple[int, bool], np.ndarray] = {}
 
     def add_on_project_loaded_handler(
         self, handler: Callable[["ProcessingSession"], None]
@@ -71,6 +73,7 @@ class ProcessingSession:
         try:
             self.images = get_find_all_frames(folder_path, ext)
             self.annotations = []
+            self.image_cache = {}
 
             # Initialize annotations and cell sizes
             wells_founded = False
@@ -159,6 +162,13 @@ class ProcessingSession:
                         centers, well_radius, cell_masks = self._process_image(image_np)
                         self.annotations.append((centers, well_radius, cell_masks))
 
+                        # Clear cache for this frame
+                        keys_to_delete = [
+                            key for key in self.image_cache if key[0] == i
+                        ]
+                        for key in keys_to_delete:
+                            del self.image_cache[key]
+
                         # Save the annotation for persistence
                         if not save_annotation(
                             img_path, centers, well_radius, cell_masks
@@ -221,6 +231,10 @@ class ProcessingSession:
             if img_idx >= len(self.images):
                 return None
 
+            cache_key = (img_idx, annotated)
+            if cache_key in self.image_cache:
+                return self.image_cache[cache_key]
+
             image_np = io_utils.read_image(self.images[img_idx])
             if image_np is None:
                 return None
@@ -231,11 +245,41 @@ class ProcessingSession:
             else:
                 scene = image_np.copy()
 
+            # Resize to reduced size
+            scale = min(1.0, ProcessingSession.TARGET_WIDTH / scene.shape[1])
+            scene = cv2.resize(scene, (0, 0), fx=scale, fy=scale)
+
             # Add annotations if requested and available
             if annotated and img_idx < len(self.annotations):
                 centers, well_radius, cell_masks = self.annotations[img_idx]
-                scene = decorate_with_cells(scene, centers, well_radius, cell_masks)
+                # Scale annotations
+                centers = (centers * scale).astype(int)
+                well_radius = int(well_radius * scale)
+                cell_masks = [
+                    cv2.resize(
+                        mask,
+                        (0, 0),
+                        fx=scale,
+                        fy=scale,
+                        interpolation=cv2.INTER_NEAREST,
+                    )
+                    for mask in cell_masks
+                ]
+                # Scale decoration parameters
+                font_scale = 3 * scale
+                thickness = max(1, int(2 * scale))
+                circle_thickness = max(1, int(3 * scale))
+                scene = decorate_with_cells(
+                    scene,
+                    centers,
+                    well_radius,
+                    cell_masks,
+                    font_scale,
+                    thickness,
+                    circle_thickness,
+                )
 
+            self.image_cache[cache_key] = scene
             return scene
         except Exception as e:
             self.logger.error(f"Error in get_image: {e}")
