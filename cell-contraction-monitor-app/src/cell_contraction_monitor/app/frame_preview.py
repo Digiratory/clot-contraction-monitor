@@ -17,6 +17,11 @@ class FramePreview(ttk.Frame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
+        # Tkinter variables
+        self._show_annotations = tk.BooleanVar(value=True)
+        self.scale_var = tk.IntVar(value=0)
+        self.zoom_var = tk.DoubleVar(value=1.0)
+
         # --- Canvas for the preview -------------------------------------------------
         self.canvas = tk.Canvas(
             self,
@@ -42,7 +47,6 @@ class FramePreview(ttk.Frame):
         self.frame_label.pack(side=tk.LEFT)
 
         # --- Scale widget for frame navigation --------------------------------------
-        self.scale_var = tk.IntVar(value=0)  # default 0
         self.scale = ttk.Scale(
             self,
             from_=0,
@@ -60,26 +64,26 @@ class FramePreview(ttk.Frame):
         )
         button_frame.pack(pady=5)
 
-        # Navigation buttons with icons (using text for simplicity)
+        # Navigation buttons with improved icons and styling
         self.prev_btn = ttk.Button(
-            button_frame, text="◀", command=self._go_to_previous_frame, width=3
+            button_frame, text="⏪", command=self._go_to_previous_frame, width=4
         )
-        self.prev_btn.pack(side=tk.LEFT, padx=2)
+        self.prev_btn.pack(side=tk.LEFT, padx=2, pady=2)
 
         self.play_btn = ttk.Button(
-            button_frame, text="▶", command=self._start_auto_increment, width=3
+            button_frame, text="▶", command=self._start_auto_increment, width=4
         )
-        self.play_btn.pack(side=tk.LEFT, padx=2)
+        self.play_btn.pack(side=tk.LEFT, padx=2, pady=2)
 
         self.stop_btn = ttk.Button(
-            button_frame, text="■", command=self.stop_auto_increment, width=3
+            button_frame, text="⏹", command=self.stop_auto_increment, width=4
         )
-        self.stop_btn.pack(side=tk.LEFT, padx=2)
+        self.stop_btn.pack(side=tk.LEFT, padx=2, pady=2)
 
         self.next_btn = ttk.Button(
-            button_frame, text="▶", command=self._go_to_next_frame, width=3
+            button_frame, text="⏩", command=self._go_to_next_frame, width=4
         )
-        self.next_btn.pack(side=tk.LEFT, padx=2)
+        self.next_btn.pack(side=tk.LEFT, padx=2, pady=2)
 
         # --- Zoom controls ----------------------------------------------------------
         zoom_frame = tk.Frame(
@@ -94,7 +98,6 @@ class FramePreview(ttk.Frame):
             #  bg="#2d3436",
             #  fg="#ffffff",
         ).pack(side=tk.LEFT)
-        self.zoom_var = tk.DoubleVar(value=1.0)
         self.zoom_scale = ttk.Scale(
             zoom_frame,
             from_=0.5,
@@ -112,6 +115,15 @@ class FramePreview(ttk.Frame):
             # fg="#ffffff"
         )
         self.zoom_label.pack(side=tk.LEFT)
+
+        # Annotation toggle checkbox
+        self.annotation_checkbox = ttk.Checkbutton(
+            zoom_frame,
+            text="Show Annotations",
+            variable=self._show_annotations,
+            command=self._on_annotation_toggle,
+        )
+        self.annotation_checkbox.pack(side=tk.LEFT, padx=(10, 0))
 
         # Internal state for the timer
         self._auto_job: Optional[str] = None
@@ -146,9 +158,8 @@ class FramePreview(ttk.Frame):
         # Get image data from processing session
         if self._processing_session is not None:
             try:
-                # TODO: add control for flag `annotated` to show labeled or raw images
                 img_array = self._processing_session.get_image(
-                    frame_idx, annotated=True
+                    frame_idx, annotated=self._show_annotations.get()
                 )
                 if img_array is not None:
                     # Convert numpy array to PIL Image for display
@@ -204,6 +215,12 @@ class FramePreview(ttk.Frame):
         self._zoom_level = self.zoom_var.get()
         self.zoom_label.config(text=f"{int(self._zoom_level * 100)}%")
         # Redraw current frame with new zoom
+        frame_idx = self.scale_var.get()
+        self._draw_frame(frame_idx)
+
+    def _on_annotation_toggle(self) -> None:
+        """Handle annotation toggle changes."""
+        # Redraw current frame with new annotation setting
         frame_idx = self.scale_var.get()
         self._draw_frame(frame_idx)
 
