@@ -73,11 +73,13 @@ class CellInWellSegmentatior:
         well_images, well_masks = ccm_ws.get_well_images(image_np, centers, well_radius)
 
         cell_masks = []
+        preprocessed_wells = []
         for i, well_image in enumerate(well_images):
             well_image = self._preprocess_well(well_image)
-            cell_mask = self._segment_cell(well_image)
-            cell_masks.append(cell_mask)
-
+            preprocessed_wells.append(well_image)
+        cell_masks = self._segment_cell_batched(
+            np.array(preprocessed_wells, dtype=np.float32)
+        )
         return centers.astype(int), well_radius, cell_masks
 
     def _preprocess_well(self, well_image: np.ndarray) -> np.ndarray:
@@ -95,11 +97,11 @@ class CellInWellSegmentatior:
             well_image, (192, 192), dst=well_image, interpolation=cv2.INTER_CUBIC
         )
         well_image = well_image.astype(np.float32) / 255.0
-        return well_image
+        return well_image[np.newaxis, :]
 
     def _segment_cell(self, well_image: np.ndarray) -> np.ndarray:
         ort_inputs_1 = {
-            self.ort_session.get_inputs()[0].name: well_image[np.newaxis, np.newaxis, :]
+            self.ort_session.get_inputs()[0].name: well_image[np.newaxis, :]
         }
 
         mask = self.ort_session.run(None, ort_inputs_1)[0][0]
@@ -111,3 +113,28 @@ class CellInWellSegmentatior:
             interpolation=cv2.INTER_NEAREST,
         )
         return mask
+
+    def _segment_cell_batched(self, well_images: np.ndarray) -> np.ndarray:
+        ort_inputs_1 = {self.ort_session.get_inputs()[0].name: well_images}
+
+        masks = self.ort_session.run(None, ort_inputs_1)[0]
+        masks = np.argmax(masks, axis=1).astype(np.uint8)
+        orig_size_masks = np.zeros(
+            (
+                masks.shape[0],
+                CellInWellSegmentatior.TARGET_SHAPE,
+                CellInWellSegmentatior.TARGET_SHAPE,
+            ),
+            dtype=np.uint8,
+        )
+        for i, mask in enumerate(masks):
+            orig_size_masks[i] = cv2.resize(
+                mask,
+                (
+                    CellInWellSegmentatior.TARGET_SHAPE,
+                    CellInWellSegmentatior.TARGET_SHAPE,
+                ),
+                dst=mask,
+                interpolation=cv2.INTER_NEAREST,
+            )
+        return orig_size_masks

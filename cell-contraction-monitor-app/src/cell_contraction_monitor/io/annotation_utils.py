@@ -93,11 +93,9 @@ def save_annotation(
     try:
         # Convert numpy arrays to lists for JSON serialization
         centers_list = centers.tolist() if isinstance(centers, np.ndarray) else centers
-        cell_masks_list = (
-            [base64.b64encode(mask).decode("utf-8") for mask in cell_masks]
-            if cell_masks
-            else []
-        )
+        cell_masks_list = [
+            base64.b64encode(mask).decode("utf-8") for mask in cell_masks
+        ]
 
         # Create annotation data structure with frame index based on file order
         annotation_data = {
