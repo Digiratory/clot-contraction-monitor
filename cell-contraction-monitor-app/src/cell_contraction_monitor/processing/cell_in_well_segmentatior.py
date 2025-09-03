@@ -30,7 +30,7 @@ def get_onnx_providers():
 
 
 class CellInWellSegmentatior:
-    TARGET_SHAPE = 384
+    TARGET_SHAPE = 348
 
     def __init__(self, onnx_model_path: str):
         self._onnx_model_path = onnx_model_path

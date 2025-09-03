@@ -3,6 +3,8 @@ import argparse
 import os
 import sys
 
+import matplotlib.pyplot as plt
+import numpy as np
 from cell_contraction_monitor.app.app import CellContractionApp
 from cell_contraction_monitor.io import export_to_csv
 from cell_contraction_monitor.processing.processing_session import ProcessingSession
@@ -48,6 +50,21 @@ def run_headless(input_folder: str, output_csv: str) -> None:
     # Export to CSV
     export_to_csv(cell_sizes, output_csv, processing_session.images)
     print(f"Results exported to: {output_csv}")
+
+    # Save plot
+    plot_path = os.path.splitext(output_csv)[0] + "_plot.png"
+    plt.figure(figsize=(10, 6))
+    num_wells = cell_sizes.shape[1]
+    for i in range(num_wells):
+        plt.plot(cell_sizes[:, i], label=f"Well {i+1}", marker="o", markersize=4)
+    plt.xlabel("Frame Index")
+    plt.ylabel("Cell Size (pixels)")
+    plt.title("Cell Contraction Analysis")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig(plot_path)
+    plt.close()
+    print(f"Plot saved to: {plot_path}")
 
 
 def main():

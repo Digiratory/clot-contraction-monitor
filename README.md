@@ -1,10 +1,11 @@
-# Cells Contraction Monitor System
+# Clot Contraction Monitor System
 
 ## Pre-commit Hooks Setup
 
 This project uses pre-commit hooks to enforce code quality and consistency standards. The following hooks are configured:
 
-### Installed Hooks:
+### Installed Hooks
+
 1. **pre-commit-hooks**:
    - trailing-whitespace: Removes trailing whitespace
    - end-of-file-fixer: Ensures files end with a newline
@@ -23,27 +24,33 @@ This project uses pre-commit hooks to enforce code quality and consistency stand
    - Formats Python code consistently
    - Uses Python 3.10+ as language version
 
-### Setup Instructions:
+### Setup Instructions
+
 1. Install pre-commit hooks:
-```bash
-pre-commit install
-```
+
+   ```bash
+   pre-commit install
+   ```
 
 2. Run all hooks on existing files:
-```bash
-pre-commit run --all-files
-```
+
+   ```bash
+   pre-commit run --all-files
+   ```
 
 3. The hooks will automatically run on every git commit, preventing code with formatting issues from being committed.
 
-### Configuration:
+### Configuration
+
 The configuration is defined in `.pre-commit-config.yaml` file which specifies:
+
 - Repository URLs and versions for each hook group
 - Specific hook IDs and their configurations
 - Stages where hooks should run
 - Language requirements for Python hooks
 
-### Benefits:
+### Benefits
+
 - Enforces consistent code style across the project
 - Improves code quality automatically
 - Prevents common formatting issues before commit
