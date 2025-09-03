@@ -49,6 +49,7 @@ class CellInWellSegmentatior:
         )
         self.centers = None
         self.well_radius = None
+        self.well_mask = None
 
     def predefine_wells(self, image_np: np.ndarray, target_count) -> bool:
         if len(image_np.shape) == 3:
@@ -57,6 +58,7 @@ class CellInWellSegmentatior:
         if centers.shape[0] == target_count:
             self.centers = centers
             self.well_radius = well_radius
+            self.well_mask = ccm_ws.circle_mask(well_radius)
             return True
         else:
             return False
@@ -67,10 +69,15 @@ class CellInWellSegmentatior:
 
         if self.centers is None:
             centers, well_radius = ccm_ws.find_wells(image_np)
+            well_mask = ccm_ws.circle_mask(well_radius)
         else:
-            centers, well_radius = self.centers, self.well_radius
+            centers, well_radius, well_mask = (
+                self.centers,
+                self.well_radius,
+                self.well_mask,
+            )
 
-        well_images, well_masks = ccm_ws.get_well_images(image_np, centers, well_radius)
+        well_images = ccm_ws.get_well_images(image_np, centers, well_radius, well_mask)
 
         cell_masks = []
         preprocessed_wells = []

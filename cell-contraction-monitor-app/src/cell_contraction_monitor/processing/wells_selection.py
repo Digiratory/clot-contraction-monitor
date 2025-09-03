@@ -95,17 +95,30 @@ def make_well_masks(image_shape, centers, average_radius) -> np.ndarray:
     return mask
 
 
-def get_well_images(image_np, centers, average_radius):
-    masks = make_well_masks(image_np.shape, centers, average_radius)
+def circle_mask(average_radius):
+    well_mask = np.zeros((int(average_radius * 2) + 1, int(average_radius * 2) + 1))
+    well_mask = cv2.circle(
+        well_mask,
+        (int(average_radius), int(average_radius)),
+        int(average_radius),
+        1,
+        -1,
+    )
+    return well_mask
 
+
+def get_well_images(image_np, centers, average_radius, well_mask=None):
     well_images = []
-    well_masks = []
-    for i, center in zip(range(masks.shape[0]), centers):
-        masked_image: np.ndarray = image_np * masks[i]
-        masked_image = masked_image[
-            int(center[1] - average_radius) : int(center[1] + average_radius),
-            int(center[0] - average_radius) : int(center[0] + average_radius),
-        ]
+    if well_mask is None:
+        well_mask = circle_mask(average_radius)
+    for center in centers:
+        masked_image: np.ndarray = (
+            image_np[
+                int(center[1] - average_radius) : int(center[1] + average_radius + 1),
+                int(center[0] - average_radius) : int(center[0] + average_radius + 1),
+            ]
+            * well_mask
+        )
 
         well_image = np.zeros(
             (int(2 * average_radius) + 1, int(2 * average_radius) + 1),
@@ -113,18 +126,5 @@ def get_well_images(image_np, centers, average_radius):
         )
         well_image[: masked_image.shape[0], : masked_image.shape[1]] = masked_image
 
-        well_mask_fi_mask = masks[i][
-            int(center[1] - average_radius) : int(center[1] + average_radius),
-            int(center[0] - average_radius) : int(center[0] + average_radius),
-        ]
-        well_mask: np.ndarray = np.zeros(
-            (int(2 * average_radius) + 1, int(2 * average_radius) + 1),
-            dtype=well_mask_fi_mask.dtype,
-        )
-        well_mask[: well_mask_fi_mask.shape[0], : well_mask_fi_mask.shape[1]] = (
-            well_mask_fi_mask
-        )
-
-        well_masks.append(well_mask)
         well_images.append(well_image)
-    return np.array(well_images), np.array(well_masks)
+    return np.array(well_images)
