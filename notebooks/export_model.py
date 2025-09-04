@@ -42,7 +42,8 @@ def export_model_to_onnx(
     n_classes: int = 2,
     opset_version: int = 22,
     optimize: bool = True,
-    quantize: bool = True,
+    quantize: bool = False,
+    fp16: bool = False,
 ):
     """
     Export trained model to ONNX format.
@@ -128,42 +129,49 @@ def export_model_to_onnx(
             onnx.checker.check_model(onnx_model)
             print("ONNX model verified successfully")
 
-            model_fp16 = float16.convert_float_to_float16(onnx_model)
-            onnx.save(model_fp16, output_path.replace(".onnx", "_fp16.onnx"))
+            if fp16:
+                model_fp16 = float16.convert_float_to_float16(onnx_model)
+                onnx.save(model_fp16, output_path.replace(".onnx", "_fp16.onnx"))
 
-            # Test with ONNX Runtime
-            print("Testing with ONNX Runtime...")
-            ort_session = onnxruntime.InferenceSession(output_path)
+                # Test with ONNX Runtime
+                print("Testing with ONNX Runtime...")
+                ort_session = onnxruntime.InferenceSession(output_path)
 
-            ort_inputs = {
-                ort_session.get_inputs()[0].name: dummy_input.detach().cpu().numpy()
-            }
-            ort_outs = ort_session.run(None, ort_inputs)
+                ort_inputs = {
+                    ort_session.get_inputs()[0].name: dummy_input.detach().cpu().numpy()
+                }
+                ort_outs = ort_session.run(None, ort_inputs)
 
-            # Verify outputs match
-            np.testing.assert_allclose(
-                torch_out.detach().cpu().numpy(), ort_outs[0], rtol=0.001, atol=0.001
-            )
+                # Verify outputs match
+                np.testing.assert_allclose(
+                    torch_out.detach().cpu().numpy(),
+                    ort_outs[0],
+                    rtol=0.001,
+                    atol=0.001,
+                )
 
-            # Test with ONNX Runtime
-            print("Testing with ONNX Runtime fp16...")
-            ort_session = onnxruntime.InferenceSession(
-                output_path.replace(".onnx", "_fp16.onnx")
-            )
+                # Test with ONNX Runtime
+                print("Testing with ONNX Runtime fp16...")
+                ort_session = onnxruntime.InferenceSession(
+                    output_path.replace(".onnx", "_fp16.onnx")
+                )
 
-            ort_inputs = {
-                ort_session.get_inputs()[0]
-                .name: dummy_input.detach()
-                .cpu()
-                .numpy()
-                .astype(np.float16)
-            }
-            ort_outs = ort_session.run(None, ort_inputs)
+                ort_inputs = {
+                    ort_session.get_inputs()[0]
+                    .name: dummy_input.detach()
+                    .cpu()
+                    .numpy()
+                    .astype(np.float16)
+                }
+                ort_outs = ort_session.run(None, ort_inputs)
 
-            # Verify outputs match
-            np.testing.assert_allclose(
-                torch_out.detach().cpu().numpy(), ort_outs[0], rtol=0.001, atol=0.001
-            )
+                # Verify outputs match
+                np.testing.assert_allclose(
+                    torch_out.detach().cpu().numpy(),
+                    ort_outs[0],
+                    rtol=0.001,
+                    atol=0.001,
+                )
 
             if quantize:
                 model_fp32 = output_path
