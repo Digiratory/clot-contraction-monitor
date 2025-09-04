@@ -16,8 +16,8 @@ from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
 from matplotlib import pyplot as plt
 from monai.data import CacheDataset, DataLoader, Dataset, decollate_batch
-from monai.losses import DiceCELoss, HausdorffDTLoss, TverskyLoss
-from monai.metrics import DiceMetric
+from monai.losses import DiceCELoss, DiceFocalLoss, HausdorffDTLoss, TverskyLoss
+from monai.metrics import DiceMetric, HausdorffDistanceMetric
 from monai.networks.nets import UNet
 from monai.visualize import plot_2d_or_3d_image
 from monai.visualize.utils import blend_images
@@ -54,8 +54,8 @@ class LitUNet(L.LightningModule):
             num_res_units=2,
         )
 
-        self.loss = TverskyLoss(to_onehot_y=True, softmax=True)
-        self.dice_metric = DiceMetric(
+        self.loss = HausdorffDTLoss(to_onehot_y=True, softmax=True)
+        self.dice_metric = HausdorffDistanceMetric(
             include_background=False, reduction="mean", get_not_nans=False
         )
 
@@ -69,7 +69,7 @@ class LitUNet(L.LightningModule):
         self.train_losses = []
         self.val_losses = []
         self.metric_values = []
-        self.best_val_dice = 0
+        self.best_val_dice = 100000
         self.best_val_epoch = 0
 
     def forward(self, inputs):
@@ -138,7 +138,7 @@ class LitUNet(L.LightningModule):
         self.dice_metric.reset()
         self.val_step_outputs.clear()  # free memory
 
-        if mean_val_dice > self.best_val_dice:
+        if mean_val_dice < self.best_val_dice:
             self.best_val_dice = mean_val_dice
             self.best_val_epoch = self.current_epoch
 

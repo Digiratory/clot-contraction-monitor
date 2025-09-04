@@ -135,6 +135,12 @@ class CellInWellSegmentatior:
             dtype=np.uint8,
         )
         for i, mask in enumerate(masks):
+            contour, hier = cv2.findContours(
+                mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+            )
+            for cnt in contour:
+                cv2.drawContours(mask, [cnt], 0, 1, -1)
+
             orig_size_masks[i] = cv2.resize(
                 mask,
                 (
