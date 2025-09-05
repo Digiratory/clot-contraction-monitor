@@ -142,6 +142,9 @@ class ClotContractionApp(tk.Tk):
         # Initialize processing session with project settings
         self.processing_session.select_folder(folder_path=folder, settings=settings)
 
+        # Set project settings in plot frame for proper X-axis scaling
+        self.plot_frame.set_project_settings(settings)
+
         # Initialize progress tracking
         progress_var = tk.IntVar()
         progress_bar = ttk.Progressbar(

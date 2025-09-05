@@ -52,7 +52,7 @@ class ProcessingSession:
         self.images: List[str] = []
         # centers, well_radius, cell_masks
         self.annotations: List[Tuple[np.ndarray, float, List[np.ndarray]]] = []
-        self.cell_sizes: Optional[np.ndarray] = None
+        self.clot_rel_sizes: Optional[np.ndarray] = None
         self.image_cache: Dict[Tuple[int, bool], np.ndarray] = {}
 
     def add_on_project_loaded_handler(
@@ -114,9 +114,11 @@ class ProcessingSession:
 
             # Initialize cell sizes array with configured wells count
             if len(self.images) > 0:
-                self.cell_sizes = np.zeros((len(self.images), wells_count), dtype=float)
+                self.clot_rel_sizes = np.zeros(
+                    (len(self.images), wells_count), dtype=float
+                )
             else:
-                self.cell_sizes = None
+                self.clot_rel_sizes = None
 
             # Store project settings for later use
             self.project_settings = settings
@@ -194,9 +196,11 @@ class ProcessingSession:
                                 f"Failed to save annotation for frame {i}"
                             )
 
-                    if self.cell_sizes is not None and i < len(self.cell_sizes):
+                    if self.clot_rel_sizes is not None and i < len(self.clot_rel_sizes):
                         # Sum over height and width
-                        self.cell_sizes[i] = np.sum(cell_masks, axis=(1, 2))
+                        self.clot_rel_sizes[i] = np.sum(cell_masks, axis=(1, 2)) / (
+                            np.pi * well_radius**2
+                        )
 
                     callback(i, from_cache, i == len(self.images) - 1)
                 except Exception as e:
@@ -316,7 +320,7 @@ class ProcessingSession:
         Returns:
             Array of cell sizes or None if not available
         """
-        return self.cell_sizes
+        return self.clot_rel_sizes
 
     def get_frame_data(self, frame_idx: int) -> Optional[np.ndarray]:
         """Get raw frame data without annotations (for preview purposes).

@@ -20,7 +20,7 @@ class TestProcessingSession(unittest.TestCase):
         """Test initialization of ProcessingSession."""
         # Should create an instance without errors
         self.assertIsInstance(self.session, ProcessingSession)
-        self.assertIsNone(self.session.cell_sizes)
+        self.assertIsNone(self.session.clot_rel_sizes)
         self.assertEqual(self.session.images, [])
         self.assertEqual(self.session.annotations, [])
 
