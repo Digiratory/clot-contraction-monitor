@@ -1,9 +1,9 @@
-# cell-contraction-monitor-app/src/cell_contraction_monitor/app/frame_preview.py
+# cell-contraction-monitor-app/src/clot_contraction_monitor/app/frame_preview.py
 import tkinter as tk
 from tkinter import ttk
 from typing import Optional
 
-from cell_contraction_monitor.processing.processing_session import ProcessingSession
+from clot_contraction_monitor.processing.processing_session import ProcessingSession
 from PIL import Image, ImageTk
 
 

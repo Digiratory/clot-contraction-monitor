@@ -5,26 +5,26 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Optional
 
 import numpy as np
-from cell_contraction_monitor.app.frame_preview import FramePreview
-from cell_contraction_monitor.app.plot_widget import PlotFrame
-from cell_contraction_monitor.io import export_to_csv
-from cell_contraction_monitor.processing.processing_session import ProcessingSession
+from clot_contraction_monitor.app.frame_preview import FramePreview
+from clot_contraction_monitor.app.plot_widget import PlotFrame
+from clot_contraction_monitor.io import export_to_csv
+from clot_contraction_monitor.processing.processing_session import ProcessingSession
 
 
-class CellContractionApp(tk.Tk):
-    """Main application window for the Cell Contraction Monitor.
+class ClotContractionApp(tk.Tk):
+    """Main application window for the Clot Contraction Monitor.
 
-    This class provides the main GUI interface for analyzing cell contraction patterns
+    This class provides the main GUI interface for analyzing clot contraction patterns
     in biological experiments. It orchestrates the processing pipeline and user
     interaction components.
     """
 
-    APPLICATION_NAME = "Cell Contraction Monitor"
+    APPLICATION_NAME = "Clot Contraction Monitor"
 
     def __init__(self) -> None:
         """Initialize the main application window."""
         super().__init__()
-        self.title(CellContractionApp.APPLICATION_NAME)
+        self.title(ClotContractionApp.APPLICATION_NAME)
         self.geometry("1000x700")
         self.minsize(800, 600)
 
@@ -133,7 +133,7 @@ class CellContractionApp(tk.Tk):
                 # Update plot on every frame completion, regardless of cache status
                 if not from_cache or is_last:
                     self.plot_frame.update_plot(
-                        self.processing_session.get_cell_sizes()
+                        self.processing_session.get_clot_sizes()
                     )
 
             # Start processing in a separate thread to keep UI responsive
@@ -143,7 +143,7 @@ class CellContractionApp(tk.Tk):
                 daemon=True,
             )
             self.title(
-                f"{CellContractionApp.APPLICATION_NAME}: {os.path.split(folder)[1]}"
+                f"{ClotContractionApp.APPLICATION_NAME}: {os.path.split(folder)[1]}"
             )
             self._processing_thread.start()
 
@@ -192,7 +192,7 @@ class CellContractionApp(tk.Tk):
         Args:
             processing_session: The loaded processing session
         """
-        self.plot_frame.update_plot(self.processing_session.get_cell_sizes())
+        self.plot_frame.update_plot(self.processing_session.get_clot_sizes())
 
     def save_csv(self) -> None:
         """Save processed cell size data to a CSV file."""
@@ -200,7 +200,7 @@ class CellContractionApp(tk.Tk):
             messagebox.showwarning("Warning", "Processing is not finished yet.")
             return
 
-        cell_sizes = self.processing_session.get_cell_sizes()
+        cell_sizes = self.processing_session.get_clot_sizes()
         if cell_sizes is None:
             messagebox.showerror("Error", "No data available to save.")
             return

@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 # Import the module we want to test
-from cell_contraction_monitor.processing.processing_session import ProcessingSession
+from clot_contraction_monitor.processing.processing_session import ProcessingSession
 
 
 class TestProcessingSession(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestProcessingSession(unittest.TestCase):
         self.assertEqual(self.session.annotations, [])
 
     @patch(
-        "cell_contraction_monitor.processing.processing_session.CellInWellSegmentatior"
+        "clot_contraction_monitor.processing.processing_session.CellInWellSegmentatior"
     )
     def test_select_folder_success(self, mock_segmentator_class):
         """Test successful folder selection."""

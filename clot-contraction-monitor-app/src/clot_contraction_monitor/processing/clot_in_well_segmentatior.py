@@ -1,6 +1,6 @@
 import os
 
-import cell_contraction_monitor.processing.wells_selection as ccm_ws
+import clot_contraction_monitor.processing.wells_selection as ccm_ws
 import cv2
 import numpy as np
 

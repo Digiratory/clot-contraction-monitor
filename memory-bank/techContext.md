@@ -1,4 +1,4 @@
-# Technology Context: Cells Contraction Monitor
+# Technology Context: Clots Contraction Monitor
 
 ## Core Technology Stack
 - **Language**: Python 3.10+ for scientific computing ecosystem

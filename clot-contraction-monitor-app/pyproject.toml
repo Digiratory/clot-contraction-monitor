@@ -1,7 +1,7 @@
 [project]
-name = "cell-contraction-monitor"
+name = "clot-contraction-monitor"
 version = "0.1.0"
-description = "Cell Contraction Monitor - Analyze cell contraction patterns in biological experiments"
+description = "Clot Contraction Monitor - Analyze clot contraction patterns in biological experiments"
 authors = [
     {name = "Aleksandr Sinitca",email = "siniza.s.94@gmail.com"}
 ]
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "cell_contraction_monitor", from = "src"}]
+packages = [{include = "clot_contraction_monitor", from = "src"}]
 
 
 [build-system]

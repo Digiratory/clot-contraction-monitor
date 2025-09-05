@@ -1,11 +1,11 @@
-# cell-contraction-monitor-app/src/cell_contraction_monitor/app/plot_widget.py
+# cell-contraction-monitor-app/src/clot_contraction_monitor/app/plot_widget.py
 import tkinter as tk
 from tkinter import ttk
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from cell_contraction_monitor.app.radio_group_widget import RadioGroupWidget
+from clot_contraction_monitor.app.radio_group_widget import RadioGroupWidget
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 

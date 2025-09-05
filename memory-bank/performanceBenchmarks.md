@@ -1,4 +1,4 @@
-# Performance Benchmarks: Cells Contraction Monitor
+# Performance Benchmarks: Clots Contraction Monitor
 
 ## Overview
 Performance benchmarks for algorithm speed, system efficiency, user experience, scalability, and platform compatibility.

@@ -1,4 +1,4 @@
-# Technical Standards: Cells Contraction Monitor
+# Technical Standards: Clots Contraction Monitor
 
 ## Core Principles
 - Scientific accuracy first

@@ -1,4 +1,4 @@
-# Cross-References: Cells Contraction Monitor Memory Bank
+# Cross-References: Clots Contraction Monitor Memory Bank
 
 ## Overview
 This document provides cross-references between memory bank files for efficient navigation and understanding of project relationships.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple test runner for the Cells Contraction Monitor project."""
+"""Simple test runner for the Clots Contraction Monitor project."""
 
 import os
 import sys

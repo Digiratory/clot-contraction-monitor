@@ -1,13 +1,13 @@
-# cell-contraction-monitor-app/src/cell_contraction_monitor/app/main.py
+# cell-contraction-monitor-app/src/clot_contraction_monitor/app/main.py
 import argparse
 import os
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-from cell_contraction_monitor.app.app import CellContractionApp
-from cell_contraction_monitor.io import export_to_csv
-from cell_contraction_monitor.processing.processing_session import ProcessingSession
+from clot_contraction_monitor.app.app import ClotContractionApp
+from clot_contraction_monitor.io import export_to_csv
+from clot_contraction_monitor.processing.processing_session import ProcessingSession
 
 
 def run_headless(input_folder: str, output_csv: str) -> None:
@@ -42,7 +42,7 @@ def run_headless(input_folder: str, output_csv: str) -> None:
         sys.exit(1)
 
     # Get results
-    cell_sizes = processing_session.get_cell_sizes()
+    cell_sizes = processing_session.get_clot_sizes()
     if cell_sizes is None:
         print("Error: No cell size data available")
         sys.exit(1)
@@ -101,7 +101,7 @@ def main():
         run_headless(args.input_folder, args.output_csv)
     else:
         # GUI mode
-        app = CellContractionApp()
+        app = ClotContractionApp()
         app.mainloop()
 
 

@@ -1,4 +1,4 @@
-# System Patterns: Cells Contraction Monitor
+# System Patterns: Clots Contraction Monitor
 
 ## Architecture Overview
 Modular design with separation of concerns, prioritizing scientific accuracy and extensibility.

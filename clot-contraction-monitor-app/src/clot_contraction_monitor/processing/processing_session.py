@@ -3,18 +3,18 @@ import os
 from glob import glob
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import cell_contraction_monitor.io.utils as io_utils
+import clot_contraction_monitor.io.utils as io_utils
 import cv2
 import numpy as np
-from cell_contraction_monitor.annotators.cell_annotator import decorate_with_cells
-from cell_contraction_monitor.io.annotation_utils import (
+from clot_contraction_monitor.annotators.cell_annotator import decorate_with_mask
+from clot_contraction_monitor.io.annotation_utils import (
     check_annotation_version,
     get_find_all_frames,
     get_last_processed_frame,
     load_annotation,
     save_annotation,
 )
-from cell_contraction_monitor.processing.cell_in_well_segmentatior import (
+from clot_contraction_monitor.processing.clot_in_well_segmentatior import (
     CellInWellSegmentatior,
 )
 
@@ -273,7 +273,7 @@ class ProcessingSession:
                 font_scale = 3 * scale
                 thickness = max(1, int(2 * scale))
                 circle_thickness = max(1, int(3 * scale))
-                scene = decorate_with_cells(
+                scene = decorate_with_mask(
                     scene,
                     centers,
                     well_radius,
@@ -297,7 +297,7 @@ class ProcessingSession:
         """
         return len(self.images)
 
-    def get_cell_sizes(self) -> Optional[np.ndarray]:
+    def get_clot_sizes(self) -> Optional[np.ndarray]:
         """Get the cell size measurements for all frames and wells.
 
         Returns:

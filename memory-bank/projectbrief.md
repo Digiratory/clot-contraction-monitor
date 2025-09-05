@@ -1,23 +1,27 @@
-# Project Brief: Cells Contraction Monitor
+# Project Brief: Clots Contraction Monitor
 
 ## Executive Summary
-Cells Contraction Monitor is an open-source Python application that automates analysis of cellular contraction patterns using computer vision and neural networks, transforming manual hours into automated minutes of reproducible results.
+
+Clots Contraction Monitor is an open-source Python application that automates analysis of clot contraction patterns using computer vision and neural networks, transforming manual hours into automated minutes of reproducible results.
 
 ## Project Overview
+
 The application processes time-series image data to:
-- Detect and segment cells in multi-well plates
+
+- Detect and segment clots in multi-well plates
 - Track contraction dynamics over time
 - Generate quantitative metrics (frequency, amplitude, patterns)
 - Provide interactive visualization
 - Export results for statistical analysis
 
 ## Core Purpose & Mission
-**Mission**: Democratize cellular analysis with accessible, automated tools delivering scientific accuracy.
 
-**Vision**: Standard tool for cellular contraction analysis in biological research.
+**Mission**: Democratize clot analysis with accessible, automated tools delivering scientific accuracy.
+
+**Vision**: Standard tool for clot contraction analysis in biological research.
 
 ## Key Objectives
-1. Automated cell detection with neural networks
+1. Automated clot detection with neural networks
 2. Dynamic tracking algorithms
 3. Quantitative analysis metrics
 4. Interactive visualization tools
@@ -34,7 +38,7 @@ Use cases include drug screening, disease modeling, basic research, and quality 
 
 ## Project Scope
 ### In Scope
-- Cell contraction analysis in standard formats
+- Clot contraction analysis in standard formats
 - Common image/video formats (TIFF, JPEG, PNG)
 - Cross-platform compatibility (Windows, macOS, Linux)
 - Real-time processing

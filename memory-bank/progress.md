@@ -1,4 +1,4 @@
-# Progress: Cells Contraction Monitor
+# Progress: Clots Contraction Monitor
 
 ## Executive Summary
 **Project Phase**: Enhancement & Optimization
@@ -8,7 +8,7 @@
 ## Core Functionality Status
 ### ✅ COMPLETED
 - Project infrastructure and development environment
-- Core neural network-based cell segmentation
+- Core neural network-based clot segmentation
 - Basic GUI with essential features
 - Data processing for well detection and contraction analysis
 - File I/O support for common scientific formats

@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 # Import the module we want to test
-from cell_contraction_monitor.app.frame_preview import FramePreview
+from clot_contraction_monitor.app.frame_preview import FramePreview
 
 
 class TestFramePreview(unittest.TestCase):

@@ -1,16 +1,16 @@
-# Cell Contraction Monitor
+# Clot Contraction Monitor
 
-Cell Contraction Monitor is a tool for analyzing cell contraction patterns in biological experiments.
+Clot Contraction Monitor is a tool for analyzing clot contraction patterns in biological experiments.
 
 ## Project Structure
 ```
-cell-contraction-monitor-app/
+clot-contraction-monitor-app/
 ├── pyproject.toml          # Project configuration and dependencies
 ├── src/                    # Source code
-│   └── cell_contraction_monitor/
+│   └── clot_contraction_monitor/
 │       ├── __init__.py
 │       ├── app/            # Application components
-│       ├── annotators/     # Cell annotation tools
+│       ├── annotators/     # clot annotation tools
 │       ├── io/             # Input/output operations
 │       └── processing/     # Image processing modules
 └── tests/                  # Test files
@@ -81,13 +81,13 @@ The application supports headless mode for batch processing without the GUI inte
 ### Command Line Options
 
 ```bash
-python -m cell_contraction_monitor.app.main --help
+python -m clot_contraction_monitor.app.main --help
 ```
 
 ### Running in Headless Mode
 
 ```bash
-python -m cell_contraction_monitor.app.main --input-folder /path/to/images --output-csv results.csv
+python -m clot_contraction_monitor.app.main --input-folder /path/to/images --output-csv results.csv
 ```
 
 ### Arguments
@@ -101,7 +101,7 @@ python -m cell_contraction_monitor.app.main --input-folder /path/to/images --out
 The CSV file contains:
 - **Rows**: Each row represents one image/sample
 - **Columns**: First column is "Sample" (image filename), followed by Well_1, Well_2, ..., Well_40
-- **Values**: Cell size measurements for each well in each image
+- **Values**: Clot size measurements for each well in each image
 
 Example CSV structure:
 ```

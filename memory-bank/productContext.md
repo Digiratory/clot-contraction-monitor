@@ -1,7 +1,7 @@
-# Product Context: Cells Contraction Monitor
+# Product Context: Clots Contraction Monitor
 
 ## Market Opportunity
-Biological researchers face challenges with manual cell contraction analysis: time-consuming, error-prone, and unscalable. Traditional methods involve hours of microscopy and inconsistent measurements.
+Biological researchers face challenges with manual clot contraction analysis: time-consuming, error-prone, and unscalable. Traditional methods involve hours of microscopy and inconsistent measurements.
 
 ## Core Problems Solved
 1. **Automation**: AI-powered detection replaces manual counting

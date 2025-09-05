@@ -1,4 +1,4 @@
-# Active Context: Cells Contraction Monitor
+# Active Context: Clots Contraction Monitor
 
 ## Current Development Phase
 Enhancement and optimization phase: transforming prototype into production-ready application.

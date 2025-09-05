@@ -32,11 +32,11 @@ def overlay_image_alpha(img, img_overlay, pos, alpha_mask):
     return img
 
 
-def decorate_with_cells(
+def decorate_with_mask(
     full_img: np.ndarray,
     centers: list,
     well_radius: float,
-    cell_masks: np.ndarray,
+    masks: np.ndarray,
     font_scale: float = 3,
     thickness: int = 2,
     circle_thickness: int = 3,
@@ -48,14 +48,14 @@ def decorate_with_cells(
     color = (255, 0, 255)  # Green color (BGR)
     lineType = cv2.LINE_AA
 
-    for i, cell_mask in enumerate(cell_masks):
-        cell_overlay = np.zeros(cell_mask.shape + (3,), dtype=np.uint8)
-        cell_overlay[:, :, 1] = 255
+    for i, clot_mask in enumerate(masks):
+        clot_overlay = np.zeros(clot_mask.shape + (3,), dtype=np.uint8)
+        clot_overlay[:, :, 1] = 255
         scene = overlay_image_alpha(
             scene,
-            cell_overlay,
-            centers[i] - np.array(cell_mask.shape[0]) // 2,
-            cell_mask,
+            clot_overlay,
+            centers[i] - np.array(clot_mask.shape[0]) // 2,
+            clot_mask,
         )
 
     for i, well_center in enumerate(centers):
