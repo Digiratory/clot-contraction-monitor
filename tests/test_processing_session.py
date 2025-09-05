@@ -43,10 +43,10 @@ class TestProcessingSession(unittest.TestCase):
         # Initially should have 0 frames
         self.assertEqual(self.session.frame_count(), 0)
 
-    def test_get_cell_sizes(self):
+    def test_get_clot_sizes(self):
         """Test cell sizes retrieval."""
         # Should return None when no data
-        self.assertIsNone(self.session.get_cell_sizes())
+        self.assertIsNone(self.session.get_clot_sizes())
 
 
 if __name__ == "__main__":
