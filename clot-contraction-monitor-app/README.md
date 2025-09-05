@@ -16,6 +16,14 @@ clot-contraction-monitor-app/
 └── tests/                  # Test files
 ```
 
+## Key Features
+- **Neural Network-based Clot Detection**: Automated segmentation using ONNX models
+- **Interactive Visualization**: Real-time preview and analysis plots
+- **Cursor Synchronization**: Synchronized navigation between preview and plot frames
+- **Batch Processing**: Support for headless mode and automated workflows
+- **CSV Export**: Export results for statistical analysis
+- **Cross-platform**: Windows, macOS, and Linux support
+
 ## Development Environment Setup
 
 ### Prerequisites
