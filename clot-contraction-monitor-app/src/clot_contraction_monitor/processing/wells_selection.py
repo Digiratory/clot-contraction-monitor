@@ -97,8 +97,6 @@ def make_well_masks(image_shape, centers, average_radius) -> np.ndarray:
 
 def circle_mask(average_radius):
     size = int(average_radius) * 2 + 1
-    if 1 != int(average_radius) % 2:
-        size += 1
     well_mask = np.zeros((size, size))
     well_mask = cv2.circle(
         well_mask,
@@ -114,11 +112,14 @@ def get_well_images(image_np, centers, average_radius, well_mask=None):
     well_images = []
     if well_mask is None:
         well_mask = circle_mask(average_radius)
+
+    center: np.ndarray
     for center in centers:
+        center = center.astype(int)
         masked_image: np.ndarray = (
             image_np[
-                int(center[1] - average_radius) : int(center[1] + average_radius + 1),
-                int(center[0] - average_radius) : int(center[0] + average_radius + 1),
+                center[1] - int(average_radius) : center[1] + int(average_radius + 1),
+                center[0] - int(average_radius) : center[0] + int(average_radius + 1),
             ]
             * well_mask
         )
