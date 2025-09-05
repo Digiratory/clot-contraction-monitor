@@ -3,7 +3,8 @@
 Clot Contraction Monitor is a tool for analyzing clot contraction patterns in biological experiments.
 
 ## Project Structure
-```
+
+```bash
 clot-contraction-monitor-app/
 ├── pyproject.toml          # Project configuration and dependencies
 ├── src/                    # Source code
@@ -17,6 +18,7 @@ clot-contraction-monitor-app/
 ```
 
 ## Key Features
+
 - **Neural Network-based Clot Detection**: Automated segmentation using ONNX models
 - **Interactive Visualization**: Real-time preview and analysis plots
 - **Cursor Synchronization**: Synchronized navigation between preview and plot frames
@@ -27,33 +29,41 @@ clot-contraction-monitor-app/
 ## Development Environment Setup
 
 ### Prerequisites
+
 - Python 3.10 or higher
 - pip (Python package manager)
 
 ### Installation Steps
 
 1. **Create a virtual environment:**
+
    ```bash
    python -m venv .venv
    ```
 
 2. **Activate the virtual environment:**
    - On Windows:
+
      ```bash
      .venv\Scripts\activate
      ```
+
    - On macOS/Linux:
+
      ```bash
      source .venv/bin/activate
      ```
 
 3. **Install dependencies:**
+
    ```bash
    pip install -e .
    ```
+
    This installs the project in development mode along with all dependencies.
 
 ### Running Tests
+
 ```bash
 python -m pytest tests/
 ```
@@ -64,7 +74,9 @@ python -m pytest tests/
 - Run all tests: `python tests/run_tests.py`
 
 ## Project Dependencies
+
 The project requires the following key dependencies:
+
 - numpy >= 1.21.0
 - opencv-python >= 4.5.0
 - matplotlib >= 3.5.0
@@ -76,6 +88,7 @@ The project requires the following key dependencies:
 - typing_extensions >= 4.0.0
 
 ## Contributing
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
@@ -95,7 +108,7 @@ python -m clot_contraction_monitor.app.main --help
 ### Running in Headless Mode
 
 ```bash
-python -m clot_contraction_monitor.app.main --input-folder /path/to/images --output-csv results.csv
+python -m clot_contraction_monitor.app.main --headless --input-folder /path/to/images --output-csv results.csv
 ```
 
 ### Arguments
@@ -107,12 +120,14 @@ python -m clot_contraction_monitor.app.main --input-folder /path/to/images --out
 ### CSV Output Format
 
 The CSV file contains:
+
 - **Rows**: Each row represents one image/sample
 - **Columns**: First column is "Sample" (image filename), followed by Well_1, Well_2, ..., Well_40
 - **Values**: Clot size measurements for each well in each image
 
 Example CSV structure:
-```
+
+```csv
 Sample,Well_1,Well_2,Well_3,...,Well_40
 image001,123.45,234.56,345.67,...,456.78
 image002,111.11,222.22,333.33,...,444.44
@@ -122,6 +137,7 @@ image002,111.11,222.22,333.33,...,444.44
 ### Supported Image Formats
 
 The application automatically detects and processes common image formats including:
+
 - JPG/JPEG
 - PNG
 - TIFF

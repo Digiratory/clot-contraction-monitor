@@ -10,8 +10,39 @@ from clot_contraction_monitor.io import export_to_csv
 from clot_contraction_monitor.processing.processing_session import ProcessingSession
 
 
+def run_batch_headless(input_folder: str, output_csv: str) -> None:
+    """Run the application in batch headless mode processing multiple subfolders.
+
+    Args:
+        input_folder: Path to the folder containing subfolders with images to process
+        output_csv: Path where to save the CSV results (ignored in batch mode)
+    """
+    print(f"Running in batch headless mode...")
+    print(f"Input folder: {input_folder}")
+
+    # Get subfolders
+    subfolders = [
+        os.path.join(input_folder, d)
+        for d in os.listdir(input_folder)
+        if os.path.isdir(os.path.join(input_folder, d))
+    ]
+
+    if not subfolders:
+        print("Error: No subfolders found in input folder for batch processing")
+        sys.exit(1)
+
+    # Process each subfolder
+    for subfolder in subfolders:
+        folder_name = os.path.basename(subfolder)
+        specific_output_csv = os.path.join(input_folder, f"{folder_name}_results.csv")
+        print(f"Processing subfolder: {subfolder}")
+        run_headless(subfolder, specific_output_csv)
+
+    print(f"Batch processing complete. Results saved in: {input_folder}")
+
+
 def run_headless(input_folder: str, output_csv: str) -> None:
-    """Run the application in headless mode for batch processing.
+    """Run the application in headless mode for single folder processing.
 
     Args:
         input_folder: Path to the folder containing images to process
@@ -86,8 +117,17 @@ def main():
         default="results.csv",
         help="Output CSV file path (default: results.csv)",
     )
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="Run in batch mode processing multiple folders (requires --headless)",
+    )
 
     args = parser.parse_args()
+
+    if args.batch and not args.headless:
+        print("Error: --batch requires --headless mode")
+        sys.exit(1)
 
     if args.headless:
         if not args.input_folder:
@@ -98,7 +138,10 @@ def main():
             print(f"Error: Input folder does not exist: {args.input_folder}")
             sys.exit(1)
 
-        run_headless(args.input_folder, args.output_csv)
+        if args.batch:
+            run_batch_headless(args.input_folder, args.output_csv)
+        else:
+            run_headless(args.input_folder, args.output_csv)
     else:
         # GUI mode
         app = ClotContractionApp()
