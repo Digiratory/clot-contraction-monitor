@@ -16,6 +16,8 @@
 - CSV export functionality with menu integration
 - Code organization improvements (IO utilities refactoring)
 - Tkinter menu system enhancements
+- Cursor synchronization between preview and plot frames
+- Comprehensive test coverage for cursor synchronization
 
 ### 🟡 IN PROGRESS
 - Testing infrastructure expansion
