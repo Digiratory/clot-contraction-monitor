@@ -164,6 +164,9 @@ class ClotContractionApp(tk.Tk):
         self.plot_frame = PlotFrame(paned)
         paned.add(self.plot_frame, weight=3)
 
+        # Connect preview frame to plot frame for cursor synchronization
+        self.preview_frame.set_plot_frame(self.plot_frame)
+
         # Status bar with improved styling
         self.status_frame = tk.Frame(
             self,

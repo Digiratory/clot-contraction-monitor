@@ -58,6 +58,10 @@ class PlotFrame(ttk.Frame):
         self.canvas = FigureCanvasTkAgg(self.figure, master=self)
         self.canvas.draw()
 
+        # Initialize cursor line
+        self.cursor_line = None
+        self.current_frame_index = 0
+
         # Add navigation toolbar with improved styling
         self.toolbar = NavigationToolbar2Tk(self.canvas, self)
         self.toolbar.update()
@@ -111,17 +115,53 @@ class PlotFrame(ttk.Frame):
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
+    def update_cursor(self, frame_index: int) -> None:
+        """Update the vertical cursor line to the specified frame index.
+
+        Args:
+            frame_index: The frame index to position the cursor at
+        """
+        self.current_frame_index = frame_index
+
+        # Remove existing cursor line if it exists
+        if self.cursor_line is not None:
+            try:
+                self.cursor_line.remove()
+            except:
+                pass  # Line may have been removed during plot clear
+
+        # Draw new cursor line if we have data
+        if hasattr(self, "_current_data") and self._current_data is not None:
+            # Use cyan color with dashed line style for visibility
+            self.cursor_line = self.ax.axvline(
+                x=frame_index,
+                color="cyan",
+                linestyle="--",
+                linewidth=2,
+                alpha=0.8,
+                label=f"Frame {frame_index}",
+            )
+
+            # Redraw the canvas to show the cursor
+            self.canvas.draw()
+
     def _on_grouping_changed(self, value=None):
         """Handle grouping option changes."""
         # Replot with current data using new grouping
         if hasattr(self, "_current_data") and self._current_data is not None:
             self.update_plot(self._current_data)
+            # Ensure cursor is redrawn after replotting
+            if self.current_frame_index >= 0:
+                self.update_cursor(self.current_frame_index)
 
     def _on_smoothing_changed(self, value=None):
         """Handle smoothing option changes."""
         # Replot with current data using new smoothing
         if hasattr(self, "_current_data") and self._current_data is not None:
             self.update_plot(self._current_data)
+            # Ensure cursor is redrawn after replotting
+            if self.current_frame_index >= 0:
+                self.update_cursor(self.current_frame_index)
 
     def _apply_smoothing(self, data_array):
         """Apply moving average smoothing to the data array.
@@ -331,6 +371,21 @@ class PlotFrame(ttk.Frame):
                 va="center",
                 fontsize=12,
                 #  color="#b2bec3"
+            )
+
+        # Redraw cursor if we have data and a current frame index
+        if (
+            hasattr(self, "_current_data")
+            and self._current_data is not None
+            and self.current_frame_index >= 0
+        ):
+            self.cursor_line = self.ax.axvline(
+                x=self.current_frame_index,
+                color="cyan",
+                linestyle="--",
+                linewidth=2,
+                alpha=0.8,
+                label=f"Frame {self.current_frame_index}",
             )
 
         self.canvas.draw()

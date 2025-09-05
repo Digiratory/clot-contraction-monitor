@@ -257,6 +257,10 @@ class FramePreview(ttk.Frame):
         frame_idx = self.scale_var.get()
         self._draw_frame(frame_idx)
 
+        # Update cursor in plot widget if available
+        if hasattr(self, "_plot_frame") and self._plot_frame is not None:
+            self._plot_frame.update_cursor(frame_idx)
+
     def _go_to_previous_frame(self) -> None:
         """Navigate to the previous frame."""
         current = self.scale_var.get()
@@ -335,6 +339,14 @@ class FramePreview(ttk.Frame):
             self._processing_session.add_on_project_loaded_handler(
                 self._on_prosessing_session_loaded
             )
+
+    def set_plot_frame(self, plot_frame) -> None:
+        """Set reference to the plot frame for cursor synchronization.
+
+        Args:
+            plot_frame: The PlotFrame widget to synchronize cursor with
+        """
+        self._plot_frame = plot_frame
 
     def _on_prosessing_session_loaded(
         self, processing_session: ProcessingSession
