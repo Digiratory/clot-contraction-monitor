@@ -9,6 +9,9 @@ from clot_contraction_monitor.app.frame_preview import FramePreview
 from clot_contraction_monitor.app.plot_widget import PlotFrame
 from clot_contraction_monitor.io import export_to_csv
 from clot_contraction_monitor.processing.processing_session import ProcessingSession
+from clot_contraction_monitor.project_dialog import show_project_dialog
+from clot_contraction_monitor.project_settings import ProjectSettings
+from clot_contraction_monitor.settings_persistence import SettingsPersistence
 
 
 class ClotContractionApp(tk.Tk):
@@ -96,56 +99,88 @@ class ClotContractionApp(tk.Tk):
                 pass  # Menu might not be fully initialized
 
     def select_folder(self) -> None:
-        """Open a folder selection dialog and start processing images."""
+        """Open a folder selection dialog and configure project settings if needed."""
         folder = filedialog.askdirectory()
         if folder:
             print(f"Selected folder: {folder}")
-            self.processing_finished = False
-            self._set_save_csv_enabled(False)
-            self.processing_session.select_folder(folder_path=folder)
 
-            # Initialize progress tracking
-            progress_var = tk.IntVar()
-            progress_bar = ttk.Progressbar(
-                self.status_frame,
-                variable=progress_var,
-                maximum=self.processing_session.frame_count(),
-            )
-            progress_bar.pack(side=tk.RIGHT, padx=5, pady=2)
-
-            def update_progress(
-                new_progress: int, from_cache: bool, is_last: bool
-            ) -> None:
-                """Update progress bar and status text during processing."""
-                nonlocal progress_var
-                new_progress += 1
-                progress_var.set(new_progress)
-
-                if new_progress < self.processing_session.frame_count():
-                    self.status_text.set(
-                        f"File processing: {new_progress}/{self.processing_session.frame_count()}"
-                    )
-                else:
-                    self.status_text.set(f"Ready")
-                    self.processing_finished = True
-                    self._set_save_csv_enabled(True)
-
-                # Update plot on every frame completion, regardless of cache status
-                if not from_cache or is_last:
-                    self.plot_frame.update_plot(
-                        self.processing_session.get_clot_sizes()
+            # Check if settings file exists
+            if SettingsPersistence.settings_file_exists(folder):
+                # Load existing settings and start processing directly
+                try:
+                    settings = SettingsPersistence.load_settings_from_json(folder)
+                    if settings:
+                        print(
+                            f"Loaded existing settings for experiment: {settings.experiment_name}"
+                        )
+                        self._start_processing(folder, settings)
+                        return
+                except Exception as e:
+                    messagebox.showwarning(
+                        "Settings Error",
+                        f"Could not load existing settings: {e}\nPlease reconfigure the project.",
                     )
 
-            # Start processing in a separate thread to keep UI responsive
-            self._processing_thread = threading.Thread(
-                target=self.processing_session.load_project,
-                args=(update_progress,),
-                daemon=True,
-            )
-            self.title(
-                f"{ClotContractionApp.APPLICATION_NAME}: {os.path.split(folder)[1]}"
-            )
-            self._processing_thread.start()
+            # No valid settings file exists, show configuration dialog
+            def on_settings_configured(settings: ProjectSettings) -> None:
+                """Callback when project settings are configured."""
+                self._start_processing(folder, settings)
+
+            show_project_dialog(self, folder, on_settings_configured)
+
+    def _start_processing(self, folder: str, settings: ProjectSettings) -> None:
+        """Start processing with configured project settings.
+
+        Args:
+            folder: Path to the selected folder
+            settings: Configured project settings
+        """
+        print(f"Starting processing for {settings.experiment_name}")
+        self.processing_finished = False
+        self._set_save_csv_enabled(False)
+
+        # Initialize processing session with project settings
+        self.processing_session.select_folder(folder_path=folder, settings=settings)
+
+        # Set project settings in plot frame for proper X-axis scaling
+        self.plot_frame.set_project_settings(settings)
+
+        # Initialize progress tracking
+        progress_var = tk.IntVar()
+        progress_bar = ttk.Progressbar(
+            self.status_frame,
+            variable=progress_var,
+            maximum=self.processing_session.frame_count(),
+        )
+        progress_bar.pack(side=tk.RIGHT, padx=5, pady=2)
+
+        def update_progress(new_progress: int, from_cache: bool, is_last: bool) -> None:
+            """Update progress bar and status text during processing."""
+            nonlocal progress_var
+            new_progress += 1
+            progress_var.set(new_progress)
+
+            if new_progress < self.processing_session.frame_count():
+                self.status_text.set(
+                    f"File processing: {new_progress}/{self.processing_session.frame_count()}"
+                )
+            else:
+                self.status_text.set(f"Ready")
+                self.processing_finished = True
+                self._set_save_csv_enabled(True)
+
+            # Update plot on every frame completion, regardless of cache status
+            if not from_cache or is_last:
+                self.plot_frame.update_plot(self.processing_session.get_clot_sizes())
+
+        # Start processing in a separate thread to keep UI responsive
+        self._processing_thread = threading.Thread(
+            target=self.processing_session.load_project,
+            args=(update_progress,),
+            daemon=True,
+        )
+        self.title(f"{ClotContractionApp.APPLICATION_NAME}: {settings.experiment_name}")
+        self._processing_thread.start()
 
     # ---------- Main Widgets ----------
 

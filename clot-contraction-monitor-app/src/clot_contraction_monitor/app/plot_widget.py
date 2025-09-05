@@ -4,6 +4,7 @@ from tkinter import ttk
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 from clot_contraction_monitor.app.radio_group_widget import RadioGroupWidget
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -11,9 +12,9 @@ from matplotlib.figure import Figure
 
 
 class PlotFrame(ttk.Frame):
-    """A frame that embeds a Matplotlib plot for displaying cell contraction data.
+    """A frame that embeds a Matplotlib plot for displaying clot contraction data.
 
-    This widget provides real-time plotting capabilities for cell size measurements
+    This widget provides real-time plotting capabilities for clot size measurements
     and other quantitative analysis results from the processing pipeline.
     """
 
@@ -30,7 +31,7 @@ class PlotFrame(ttk.Frame):
             # facecolor="#36393f"
         )
         self.ax.set_title(
-            "Cell Contraction Analysis",
+            self._get_plot_title(),
             #   color="#ffffff",
             fontsize=12,
             fontweight="bold",
@@ -40,9 +41,10 @@ class PlotFrame(ttk.Frame):
             #    color="#ffffff"
         )
         self.ax.set_ylabel(
-            "Cell Size (pixels)",
+            "Relative size",
             #    color="#ffffff"
         )
+        self.ax.set_ylim(0, 1)
         # self.ax.tick_params(colors="#b2bec3")
         self.ax.grid(
             True,
@@ -115,6 +117,23 @@ class PlotFrame(ttk.Frame):
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
+    def set_project_settings(self, project_settings) -> None:
+        """Set the project settings to use for X-axis time scaling.
+
+        Args:
+            project_settings: The project settings containing sampling rate
+        """
+        self.project_settings = project_settings
+        self.sampling_rate_seconds = (
+            project_settings.sampling_rate_seconds if project_settings else 1.0
+        )
+        # Update plot if data is already available
+        if hasattr(self, "_current_data") and self._current_data is not None:
+            self.update_plot(self._current_data)
+            # Ensure cursor is redrawn after replotting
+            if self.current_frame_index >= 0:
+                self.update_cursor(self.current_frame_index)
+
     def update_cursor(self, frame_index: int) -> None:
         """Update the vertical cursor line to the specified frame index.
 
@@ -132,9 +151,16 @@ class PlotFrame(ttk.Frame):
 
         # Draw new cursor line if we have data
         if hasattr(self, "_current_data") and self._current_data is not None:
+            # Use time position if we have sampling rate, otherwise use frame index
+            cursor_position = frame_index
+            if (
+                hasattr(self, "sampling_rate_seconds")
+                and self.sampling_rate_seconds != 1.0
+            ):
+                cursor_position = frame_index * self.sampling_rate_seconds
             # Use cyan color with dashed line style for visibility
             self.cursor_line = self.ax.axvline(
-                x=frame_index,
+                x=cursor_position,
                 color="cyan",
                 linestyle="--",
                 linewidth=2,
@@ -228,7 +254,18 @@ class PlotFrame(ttk.Frame):
                 # Calculate mean and std for each frame in this row
                 row_mean = np.mean(row_wells, axis=1)
                 row_std = np.std(row_wells, axis=1)
-                grouped_data.append((row_mean, row_std, f"Row {row+1}"))
+
+                # Use group name from project settings if available
+                label = f"Row {row+1}"
+                if (
+                    hasattr(self, "project_settings")
+                    and self.project_settings
+                    and self.project_settings.group_names
+                ):
+                    if row < len(self.project_settings.group_names):
+                        label = self.project_settings.group_names[row]
+
+                grouped_data.append((row_mean, row_std, label))
 
         return grouped_data
 
@@ -248,31 +285,71 @@ class PlotFrame(ttk.Frame):
                 # Calculate mean and std for each frame in this column
                 col_mean = np.mean(col_wells, axis=1)
                 col_std = np.std(col_wells, axis=1)
-                grouped_data.append((col_mean, col_std, f"Column {col+1}"))
+
+                # Use group name from project settings if available
+                label = f"Column {col+1}"
+                if (
+                    hasattr(self, "project_settings")
+                    and self.project_settings
+                    and self.project_settings.group_names
+                ):
+                    if col < len(self.project_settings.group_names):
+                        label = self.project_settings.group_names[col]
+
+                grouped_data.append((col_mean, col_std, label))
 
         return grouped_data
+
+    def _get_plot_title(self, suffix: str = "") -> str:
+        """Generate plot title with project name.
+
+        Args:
+            suffix: Additional text to append to the base title
+
+        Returns:
+            Formatted plot title
+        """
+        base_title = "Clot Contraction Analysis"
+        if (
+            hasattr(self, "project_settings")
+            and self.project_settings
+            and self.project_settings.experiment_name
+        ):
+            base_title = (
+                f"Clot Contraction Analysis - {self.project_settings.experiment_name}"
+            )
+
+        if suffix:
+            return f"{base_title} - {suffix}"
+        return base_title
 
     def update_plot(self, data: Optional[Union[np.ndarray, list]] = None) -> None:
         """Update the plot with new data.
 
         Args:
-            data: Array or list of cell size measurements. If None, clears the plot.
+            data: Array or list of clot size measurements. If None, clears the plot.
         """
         self.ax.clear()
         self.ax.set_title(
-            "Cell Contraction Analysis",
+            self._get_plot_title(),
             # color="#ffffff",
             fontsize=12,
             fontweight="bold",
         )
+        # Set X-axis label based on whether we have sampling rate
+        if hasattr(self, "sampling_rate_seconds"):
+            xlabel = "Time (seconds)"
+        else:
+            xlabel = "Frame Index"
         self.ax.set_xlabel(
-            "Frame Index",
+            xlabel,
             # color="#ffffff"
         )
         self.ax.set_ylabel(
-            "Cell Size (pixels)",
+            "Relative size",
             # color="#ffffff"
         )
+        self.ax.set_ylim(0, 1)
         # self.ax.tick_params(colors="#b2bec3")
         self.ax.grid(
             True,
@@ -294,6 +371,15 @@ class PlotFrame(ttk.Frame):
             # Apply smoothing to the data
             data_array = self._apply_smoothing(data_array)
 
+            # Create time array if sampling rate is available
+            if (
+                hasattr(self, "sampling_rate_seconds")
+                and self.sampling_rate_seconds != 1.0
+            ):
+                time_array = np.arange(len(data_array)) * self.sampling_rate_seconds
+            else:
+                time_array = np.arange(len(data_array))
+
             # Get current grouping option
             grouping_option = self.grouping_widget.get_value()
 
@@ -304,6 +390,7 @@ class PlotFrame(ttk.Frame):
                     colors = plt.cm.Set1(np.linspace(0, 1, data_array.shape[1]))
                     for i in range(data_array.shape[1]):
                         self.ax.plot(
+                            time_array,
                             data_array[:, i],
                             label=f"Well {i+1}",
                             marker="o",
@@ -318,10 +405,12 @@ class PlotFrame(ttk.Frame):
                     for i, (mean_vals, std_vals, label) in enumerate(grouped_data):
                         color = colors[i]
                         # Plot mean line
-                        self.ax.plot(mean_vals, label=label, color=color, linewidth=2)
+                        self.ax.plot(
+                            time_array, mean_vals, label=label, color=color, linewidth=2
+                        )
                         # Plot standard deviation as semi-transparent area
                         self.ax.fill_between(
-                            range(len(mean_vals)),
+                            time_array,
                             mean_vals - std_vals,
                             mean_vals + std_vals,
                             alpha=0.2,
@@ -335,10 +424,12 @@ class PlotFrame(ttk.Frame):
                     for i, (mean_vals, std_vals, label) in enumerate(grouped_data):
                         color = colors[i]
                         # Plot mean line
-                        self.ax.plot(mean_vals, label=label, color=color, linewidth=2)
+                        self.ax.plot(
+                            time_array, mean_vals, label=label, color=color, linewidth=2
+                        )
                         # Plot standard deviation as semi-transparent area
                         self.ax.fill_between(
-                            range(len(mean_vals)),
+                            time_array,
                             mean_vals - std_vals,
                             mean_vals + std_vals,
                             alpha=0.2,
@@ -347,17 +438,17 @@ class PlotFrame(ttk.Frame):
                     self.ax.legend(loc="best")
             elif len(data_array.shape) == 1:
                 # Single series of data
-                self.ax.plot(data_array, marker="o", markersize=4)
+                self.ax.plot(time_array, data_array, marker="o", markersize=4)
 
             self.ax.set_title(
-                "Cell Contraction Analysis - Live Update",
+                self._get_plot_title(),
                 # color="#ffffff",
                 fontsize=12,
                 fontweight="bold",
             )
         else:
             self.ax.set_title(
-                "Cell Contraction Analysis - No Data Available",
+                self._get_plot_title("No Data Available"),
                 # color="#ffffff",
                 fontsize=12,
                 fontweight="bold",
@@ -379,8 +470,15 @@ class PlotFrame(ttk.Frame):
             and self._current_data is not None
             and self.current_frame_index >= 0
         ):
+            # Use time position if we have sampling rate, otherwise use frame index
+            cursor_position = self.current_frame_index
+            if (
+                hasattr(self, "sampling_rate_seconds")
+                and self.sampling_rate_seconds != 1.0
+            ):
+                cursor_position = self.current_frame_index * self.sampling_rate_seconds
             self.cursor_line = self.ax.axvline(
-                x=self.current_frame_index,
+                x=cursor_position,
                 color="cyan",
                 linestyle="--",
                 linewidth=2,
