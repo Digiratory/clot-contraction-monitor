@@ -17,6 +17,7 @@ from clot_contraction_monitor.io.annotation_utils import (
 from clot_contraction_monitor.processing.clot_in_well_segmentatior import (
     CellInWellSegmentatior,
 )
+from clot_contraction_monitor.project_settings import ProjectSettings
 
 
 class ProcessingSession:
@@ -64,12 +65,18 @@ class ProcessingSession:
         """
         self.on_project_loaded_handlers.append(handler)
 
-    def select_folder(self, folder_path: str, ext: str = "JPG") -> bool:
+    def select_folder(
+        self,
+        folder_path: str,
+        ext: str = "JPG",
+        settings: Optional[ProjectSettings] = None,
+    ) -> bool:
         """Select and load images from a folder for processing.
 
         Args:
             folder_path: Path to the folder containing image files
             ext: File extension to filter (default: "JPG")
+            settings: Project settings to use for processing
 
         Returns:
             True if successful, False otherwise
@@ -79,6 +86,11 @@ class ProcessingSession:
             self.annotations = []
             self.image_cache = {}
 
+            # Use wells count from settings or default
+            wells_count = (
+                settings.wells_count if settings else ProcessingSession.WELLS_COUNT
+            )
+
             # Initialize annotations and cell sizes
             wells_founded = False
             for i, img in enumerate(self.images):
@@ -86,7 +98,7 @@ class ProcessingSession:
                 image_np = io_utils.read_image(img)
                 if image_np is not None:
                     wells_founded = self.segmentator.predefine_wells(
-                        image_np, target_count=ProcessingSession.WELLS_COUNT
+                        image_np, target_count=wells_count
                     )
                     if wells_founded:
                         self.logger.info(
@@ -100,13 +112,14 @@ class ProcessingSession:
                 self.logger.warning("Could not predefine wells in images")
                 return False
 
-            # Initialize cell sizes array
+            # Initialize cell sizes array with configured wells count
             if len(self.images) > 0:
-                self.cell_sizes = np.zeros(
-                    (len(self.images), ProcessingSession.WELLS_COUNT), dtype=float
-                )
+                self.cell_sizes = np.zeros((len(self.images), wells_count), dtype=float)
             else:
                 self.cell_sizes = None
+
+            # Store project settings for later use
+            self.project_settings = settings
 
             self._on_project_loaded()
             return True
