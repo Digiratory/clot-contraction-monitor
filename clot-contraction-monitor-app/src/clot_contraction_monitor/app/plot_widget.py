@@ -526,8 +526,14 @@ class PlotFrame(ttk.Frame):
 
             ax = self.param_axes[param_name]
             ax.set_title(title, fontsize=10, fontweight="bold")
-            ax.set_ylabel("Time (Seconds)", fontsize=9)
             ax.grid(True, alpha=0.3, axis="y")
+            # Only the first subplot gets a ylabel
+            if i == 0:
+                ax.set_ylabel("Time (Seconds)", fontsize=9)
+            else:
+                # Hide Y labels for shared axes to avoid clutter
+                ax.tick_params(left=False)
+                ax.set_ylabel("")  # Clear ylabel for middle subplots
 
             # Collect data for this parameter from all groups
             parameter_data = []
