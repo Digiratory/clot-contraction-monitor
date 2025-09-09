@@ -1,7 +1,7 @@
 # cell-contraction-monitor-app/src/clot_contraction_monitor/app/plot_widget.py
 import tkinter as tk
 from tkinter import ttk
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -23,38 +23,26 @@ class PlotFrame(ttk.Frame):
         self.figure = Figure(
             figsize=(6, 4),
             dpi=100,
-            # facecolor="#2d3436",
-            # edgecolor="#2d3436"
         )
         self.ax = self.figure.add_subplot(
             111,
-            # facecolor="#36393f"
         )
         self.ax.set_title(
             self._get_plot_title(),
-            #   color="#ffffff",
             fontsize=12,
             fontweight="bold",
         )
         self.ax.set_xlabel(
             "Frame Index",
-            #    color="#ffffff"
         )
         self.ax.set_ylabel(
             "Relative size",
-            #    color="#ffffff"
         )
         self.ax.set_ylim(0, 1)
-        # self.ax.tick_params(colors="#b2bec3")
         self.ax.grid(
             True,
             alpha=0.3,
-            #  color="#4a5568"
         )
-        # self.ax.spines['bottom'].set_color("#4a5568")
-        # self.ax.spines['left'].set_color("#4a5568")
-        # self.ax.spines['top'].set_color("#4a5568")
-        # self.ax.spines['right'].set_color("#4a5568")
 
         # Embed the figure in Tkinter
         self.canvas = FigureCanvasTkAgg(self.figure, master=self)
@@ -67,16 +55,11 @@ class PlotFrame(ttk.Frame):
         # Add navigation toolbar with improved styling
         self.toolbar = NavigationToolbar2Tk(self.canvas, self)
         self.toolbar.update()
-        # self.toolbar.config(bg="#2d3436")
 
         # Style the toolbar buttons
         for child in self.toolbar.winfo_children():
             if isinstance(child, tk.Button):
-                child.config(
-                    # bg="#36393f",
-                    # fg="#ffffff",
-                    # activebackground="#4a5568"
-                )
+                child.config()
 
         # Create control frame for grouping options
         self.control_frame = ttk.Frame(self)
@@ -113,6 +96,20 @@ class PlotFrame(ttk.Frame):
         )
         self.smoothing_widget.pack(side=tk.LEFT, padx=5)
 
+        # Plot type radio buttons using RadioGroupWidget
+        plot_options = [
+            ("Raw data", "raw"),
+            ("Fitted data", "fitted"),
+        ]
+        self.plot_options_widget = RadioGroupWidget(
+            self.control_frame,
+            title="Plotting",
+            options=plot_options,
+            default_value="none",
+            callback=self._on_plot_type_changed,
+        )
+        self.plot_options_widget.pack(side=tk.LEFT, padx=5)
+
         # Pack the toolbar first, then the canvas
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -129,7 +126,7 @@ class PlotFrame(ttk.Frame):
         )
         # Update plot if data is already available
         if hasattr(self, "_current_data") and self._current_data is not None:
-            self.update_plot(self._current_data)
+            self.update_plot(self._current_data, self._current_data_fitted)
             # Ensure cursor is redrawn after replotting
             if self.current_frame_index >= 0:
                 self.update_cursor(self.current_frame_index)
@@ -175,7 +172,7 @@ class PlotFrame(ttk.Frame):
         """Handle grouping option changes."""
         # Replot with current data using new grouping
         if hasattr(self, "_current_data") and self._current_data is not None:
-            self.update_plot(self._current_data)
+            self.update_plot(self._current_data, self._current_data_fitted)
             # Ensure cursor is redrawn after replotting
             if self.current_frame_index >= 0:
                 self.update_cursor(self.current_frame_index)
@@ -184,7 +181,14 @@ class PlotFrame(ttk.Frame):
         """Handle smoothing option changes."""
         # Replot with current data using new smoothing
         if hasattr(self, "_current_data") and self._current_data is not None:
-            self.update_plot(self._current_data)
+            self.update_plot(self._current_data, self._current_data_fitted)
+            # Ensure cursor is redrawn after replotting
+            if self.current_frame_index >= 0:
+                self.update_cursor(self.current_frame_index)
+
+    def _on_plot_type_changed(self, value=None):
+        if hasattr(self, "_current_data") and self._current_data is not None:
+            self.update_plot(self._current_data, self._current_data_fitted)
             # Ensure cursor is redrawn after replotting
             if self.current_frame_index >= 0:
                 self.update_cursor(self.current_frame_index)
@@ -323,7 +327,12 @@ class PlotFrame(ttk.Frame):
             return f"{base_title} - {suffix}"
         return base_title
 
-    def update_plot(self, data: Optional[Union[np.ndarray, list]] = None) -> None:
+    def update_plot(
+        self,
+        data: Optional[Union[np.ndarray, list]] = None,
+        fitted_data: Optional[Union[np.ndarray, list]] = None,
+        params: Optional[Dict[str, np.ndarray]] = None,
+    ) -> None:
         """Update the plot with new data.
 
         Args:
@@ -332,7 +341,6 @@ class PlotFrame(ttk.Frame):
         self.ax.clear()
         self.ax.set_title(
             self._get_plot_title(),
-            # color="#ffffff",
             fontsize=12,
             fontweight="bold",
         )
@@ -343,30 +351,29 @@ class PlotFrame(ttk.Frame):
             xlabel = "Frame Index"
         self.ax.set_xlabel(
             xlabel,
-            # color="#ffffff"
         )
         self.ax.set_ylabel(
             "Relative size",
-            # color="#ffffff"
         )
         self.ax.set_ylim(0, 1)
-        # self.ax.tick_params(colors="#b2bec3")
         self.ax.grid(
             True,
             alpha=0.3,
-            # color="#4a5568"
         )
-        # self.ax.spines['bottom'].set_color("#4a5568")
-        # self.ax.spines['left'].set_color("#4a5568")
-        # self.ax.spines['top'].set_color("#4a5568")
-        # self.ax.spines['right'].set_color("#4a5568")
 
         if data is not None and len(data) > 0:
             # Store current data for potential replotting
             self._current_data = data
+            self._current_data_fitted = fitted_data
+
+            plot_type_option = self.plot_options_widget.get_value()
+            if plot_type_option == "raw" or fitted_data is None:
+                data_array = data
+            else:
+                data_array = fitted_data
 
             # Convert to numpy array for consistent handling
-            data_array = np.array(data)
+            data_array = np.array(data_array)
 
             # Apply smoothing to the data
             data_array = self._apply_smoothing(data_array)
@@ -397,6 +404,7 @@ class PlotFrame(ttk.Frame):
                             markersize=4,
                             color=colors[i],
                         )
+
                     self.ax.legend(loc="best")
                 elif grouping_option == "rows":
                     # Group by rows and plot mean with std deviation
@@ -442,14 +450,12 @@ class PlotFrame(ttk.Frame):
 
             self.ax.set_title(
                 self._get_plot_title(),
-                # color="#ffffff",
                 fontsize=12,
                 fontweight="bold",
             )
         else:
             self.ax.set_title(
                 self._get_plot_title("No Data Available"),
-                # color="#ffffff",
                 fontsize=12,
                 fontweight="bold",
             )
@@ -461,7 +467,6 @@ class PlotFrame(ttk.Frame):
                 ha="center",
                 va="center",
                 fontsize=12,
-                #  color="#b2bec3"
             )
 
         # Redraw cursor if we have data and a current frame index
