@@ -4,11 +4,10 @@ from tkinter import ttk
 from typing import Dict, Optional, Union
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 from clot_contraction_monitor.app.radio_group_widget import RadioGroupWidget
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.figure import Figure
+from matplotlib.gridspec import GridSpec
 
 
 class PlotFrame(ttk.Frame):
@@ -23,8 +22,12 @@ class PlotFrame(ttk.Frame):
         # Create figure with custom subplot layout
         self.figure = plt.figure(figsize=(12, 8), dpi=100)
 
+        # Create a GridSpec for more flexible subplot layout
+        gs = GridSpec(2, 3, figure=self.figure, height_ratios=[2, 1])
+
+        # Main plot takes full width of first row
+        self.ax = self.figure.add_subplot(gs[0, :])
         # Main plot - spans full width across first row
-        self.ax = self.figure.add_subplot(2, 1, 1)
         self.ax.set_title(
             self._get_plot_title(),
             fontsize=12,
@@ -42,14 +45,6 @@ class PlotFrame(ttk.Frame):
             ("last_index_95p", "95% Point\nFrame"),
             ("first_index_5p", "5% Point\nFrame"),
         ]
-
-        # Create a GridSpec for more flexible subplot layout
-        from matplotlib.gridspec import GridSpec
-
-        gs = GridSpec(2, 3, figure=self.figure, height_ratios=[2, 1])
-
-        # Main plot takes full width of first row
-        self.ax = self.figure.add_subplot(gs[0, :])
 
         # Parameter subplots in second row - share Y axis
         first_ax = None
