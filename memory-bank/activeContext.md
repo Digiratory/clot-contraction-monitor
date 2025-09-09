@@ -16,6 +16,9 @@ Enhancement and optimization phase: transforming prototype into production-ready
 3. **UX**: Interactive visualization, progress feedback, batch processing, CSV export functionality, cursor synchronization
 4. **Validation**: Ground truth comparison, reproducibility testing
 5. **Code Organization**: IO utilities refactoring, menu system improvements
+6. **Advanced Analysis**: Curve metrics analysis using second-order aperiodic transfer functions, statistical parameter extraction (crossover position, threshold points)
+7. **Enhanced Visualization**: GridSpec-based flexible plot layouts, vertical boxplot subplots for statistical data, improved data grouping and filtering options
+8. **Batch Processing**: Headless processing capabilities for automated workflows and high-throughput analysis
 
 ## Key Technical Decisions
 - **Streaming Processing**: For large datasets beyond RAM limits

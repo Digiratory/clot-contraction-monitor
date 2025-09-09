@@ -11,12 +11,12 @@ Modular design with separation of concerns, prioritizing scientific accuracy and
 - Cross-platform compatibility
 
 ## Layered Architecture
-- **Core Engine**: Neural networks, image processing, math libraries
-- **Data Access**: File I/O, annotation persistence, caching
-- **Processing**: Preprocessing, segmentation, tracking, feature extraction
-- **Analysis**: Statistical analysis, pattern recognition, quality metrics
-- **Visualization**: Interactive plots, previews, progress monitoring
-- **Application**: Workflow orchestration, UI, session management
+- **Core Engine**: Neural networks, image processing, math libraries, curve fitting algorithms
+- **Data Access**: File I/O, annotation persistence, caching, headless processing interface
+- **Processing**: Preprocessing, segmentation, tracking, feature extraction, curve metrics analysis
+- **Analysis**: Statistical analysis, pattern recognition, quality metrics, second-order response modeling
+- **Visualization**: Interactive plots, previews, progress monitoring, statistical parameter visualization, GridSpec layouts
+- **Application**: Workflow orchestration, UI, session management, batch processing capabilities
 
 ## Key Design Patterns
 1. **Pipeline Processing**: Modular stages with validation and error handling
@@ -25,6 +25,9 @@ Modular design with separation of concerns, prioritizing scientific accuracy and
 4. **Observer Pattern**: Real-time updates and event handling
 5. **Repository Pattern**: Data persistence abstraction
 6. **Factory Pattern**: Dynamic component creation
+7. **Curve Fitting Pattern**: Second-order aperiodic transfer function modeling for biological curves
+8. **Statistical Visualization Pattern**: Boxplot-based parameter comparison across experimental groups
+9. **GridSpec Layout Pattern**: Flexible subplot arrangement for complex multi-parameter views
 
 ## Component Relationships
 Core modules: app/, processing/, io/, utils/ with clear dependencies and data flow from input to visualization.

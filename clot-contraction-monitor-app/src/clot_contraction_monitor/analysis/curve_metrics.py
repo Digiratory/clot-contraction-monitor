@@ -146,7 +146,7 @@ def _analyze_with_curve_fit(curves: np.ndarray) -> Dict[str, np.ndarray]:
             )
 
             # Compute parameters analytically from fitted parameters
-            params["crossover_position"][i] = np.argmax(fitted_curve_div)
+            params["crossover_position"][i] = np.argmax(np.abs(fitted_curve_div))
             params["last_index_95p"][i] = _find_last_above_percentile(
                 fitted_curve, 0.95
             )
@@ -165,7 +165,7 @@ def _find_last_above_percentile(curve: np.ndarray, percentile: float) -> float:
     max_val = curve.max()
     min_val = curve.min()
 
-    threshold = (max_val - min_val) * percentile
+    threshold = (max_val - min_val) * percentile + min_val
 
     above = curve > threshold
     if np.any(above):
@@ -178,7 +178,7 @@ def _find_first_below_percentile(curve: np.ndarray, percentile: float) -> float:
     max_val = curve.max()
     min_val = curve.min()
 
-    threshold = (max_val - min_val) * percentile
+    threshold = (max_val - min_val) * percentile + min_val
 
     below = curve < threshold
     if np.any(below):
