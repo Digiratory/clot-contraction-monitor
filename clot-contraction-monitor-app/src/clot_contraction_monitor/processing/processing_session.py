@@ -3,6 +3,7 @@ import os
 from glob import glob
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import clot_contraction_monitor.analysis.curve_metrics as curve_metrics
 import clot_contraction_monitor.io.utils as io_utils
 import cv2
 import numpy as np
@@ -53,7 +54,10 @@ class ProcessingSession:
         # centers, well_radius, cell_masks
         self.annotations: List[Tuple[np.ndarray, float, List[np.ndarray]]] = []
         self.clot_rel_sizes: Optional[np.ndarray] = None
+        self.clot_rel_sizes_fittes: Optional[np.ndarray] = None
         self.image_cache: Dict[Tuple[int, bool], np.ndarray] = {}
+        # Analysis results storage
+        self.analysis_results: Optional[Dict[str, np.ndarray]] = None
 
     def add_on_project_loaded_handler(
         self, handler: Callable[["ProcessingSession"], None]
@@ -201,11 +205,14 @@ class ProcessingSession:
                         self.clot_rel_sizes[i] = np.sum(cell_masks, axis=(1, 2)) / (
                             np.pi * well_radius**2
                         )
-
+                    if i == len(self.images) - 1:
+                        self._compute_analysis_parameters()
                     callback(i, from_cache, i == len(self.images) - 1)
                 except Exception as e:
                     self.logger.error(f"Error processing image {img_path}: {e}")
                     continue
+
+            # Compute analysis parameters after all frames are processed
 
             return True
         except Exception as e:
@@ -338,3 +345,49 @@ class ProcessingSession:
         except Exception as e:
             self.logger.error(f"Error in get_frame_data: {e}")
             return None
+
+    def _compute_analysis_parameters(self) -> None:
+        """Compute curve analysis parameters from clot relative sizes.
+
+        This method analyzes contraction curves using batched processing
+        to extract biologically meaningful parameters.
+        """
+        try:
+            if self.clot_rel_sizes is None:
+                self.logger.warning("No clot size data available for analysis")
+                self.analysis_results = None
+                return
+
+            if self.clot_rel_sizes.size == 0:
+                self.logger.warning("Empty clot size data")
+                self.analysis_results = None
+                return
+
+            self.logger.info("Computing analysis parameters from curve data")
+            self.analysis_results, self.clot_rel_sizes_fittes = (
+                curve_metrics.analyze_curve_batch(self.clot_rel_sizes)
+            )
+
+            self.logger.info("Analysis parameters computed successfully")
+
+        except Exception as e:
+            self.logger.error(f"Error computing analysis parameters: {e}")
+            self.analysis_results = None
+            self.clot_rel_sizes_fittes = None
+
+    def get_analysis_results(self) -> Optional[Dict[str, np.ndarray]]:
+        """Get computed analysis parameters.
+
+        Returns:
+            Dictionary with parameter arrays or None if not computed:
+            - crossover_position: Midpoint indices of transition regions
+            - last_index_95p: Last indices > 95% of initial value
+            - first_index_5p: First indices < 5% of initial value
+
+            All arrays have shape (N,) where N is number of wells.
+            Invalid values are returned as np.nan.
+        """
+        return self.analysis_results
+
+    def get_fitted_curves(self) -> Optional[np.ndarray]:
+        return self.clot_rel_sizes_fittes

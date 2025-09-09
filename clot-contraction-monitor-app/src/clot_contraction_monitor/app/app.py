@@ -171,7 +171,11 @@ class ClotContractionApp(tk.Tk):
 
             # Update plot on every frame completion, regardless of cache status
             if not from_cache or is_last:
-                self.plot_frame.update_plot(self.processing_session.get_clot_sizes())
+                self.plot_frame.update_plot(
+                    self.processing_session.get_clot_sizes(),
+                    self.processing_session.get_fitted_curves(),
+                    self.processing_session.get_analysis_results(),
+                )
 
         # Start processing in a separate thread to keep UI responsive
         self._processing_thread = threading.Thread(
