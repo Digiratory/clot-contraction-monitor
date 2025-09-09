@@ -97,8 +97,6 @@ def make_well_masks(image_shape, centers, average_radius) -> np.ndarray:
 
 def circle_mask(average_radius):
     size = int(average_radius) * 2 + 1
-    if 1 != int(average_radius) % 2:
-        size += 1
     well_mask = np.zeros((size, size))
     well_mask = cv2.circle(
         well_mask,
@@ -114,20 +112,35 @@ def get_well_images(image_np, centers, average_radius, well_mask=None):
     well_images = []
     if well_mask is None:
         well_mask = circle_mask(average_radius)
+
+    radius = int(average_radius)
+    size = 2 * radius + 1
+
+    center: np.ndarray
     for center in centers:
-        masked_image: np.ndarray = (
-            image_np[
-                int(center[1] - average_radius) : int(center[1] + average_radius + 1),
-                int(center[0] - average_radius) : int(center[0] + average_radius + 1),
-            ]
-            * well_mask
-        )
+        center = center.astype(int)
 
-        well_image = np.zeros_like(
-            well_mask,
-            dtype=masked_image.dtype,
-        )
-        well_image[: masked_image.shape[0], : masked_image.shape[1]] = masked_image
+        # Calculate slice bounds considering image borders
+        y_start = max(0, center[1] - radius)
+        y_end = min(center[1] + radius + 1, image_np.shape[0])
+        x_start = max(0, center[0] - radius)
+        x_end = min(center[0] + radius + 1, image_np.shape[1])
 
+        # Slice the image
+        sliced_image = image_np[y_start:y_end, x_start:x_end]
+
+        # Calculate offsets for placement in well_image
+        y_offset = radius - (center[1] - y_start)
+        x_offset = radius - (center[0] - x_start)
+
+        # Create well_image of full size
+        well_image = np.zeros((size, size), dtype=sliced_image.dtype)
+
+        # Place the masked sliced image at the correct position
+        well_image[
+            y_offset : y_offset + sliced_image.shape[0],
+            x_offset : x_offset + sliced_image.shape[1],
+        ] = sliced_image
+        well_image = well_image * well_mask
         well_images.append(well_image)
     return np.array(well_images)
