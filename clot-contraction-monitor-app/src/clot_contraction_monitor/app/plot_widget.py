@@ -20,29 +20,59 @@ class PlotFrame(ttk.Frame):
 
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        self.figure = Figure(
-            figsize=(6, 4),
-            dpi=100,
-        )
-        self.ax = self.figure.add_subplot(
-            111,
-        )
+        # Create figure with custom subplot layout
+        self.figure = plt.figure(figsize=(12, 8), dpi=100)
+
+        # Main plot - spans full width across first row
+        self.ax = self.figure.add_subplot(2, 1, 1)
         self.ax.set_title(
             self._get_plot_title(),
             fontsize=12,
             fontweight="bold",
         )
-        self.ax.set_xlabel(
-            "Frame Index",
-        )
-        self.ax.set_ylabel(
-            "Relative size",
-        )
+        self.ax.set_xlabel("Frame Index")
+        self.ax.set_ylabel("Relative size")
         self.ax.set_ylim(0, 1)
-        self.ax.grid(
-            True,
-            alpha=0.3,
-        )
+        self.ax.grid(True, alpha=0.3)
+
+        # Add horizontal boxplot subplots in second row with shared Y axis
+        self.param_axes = {}
+        self.param_configs = [
+            ("crossover_position", "Crossover\nPosition"),
+            ("last_index_95p", "95% Point\nFrame"),
+            ("first_index_5p", "5% Point\nFrame"),
+        ]
+
+        # Create a GridSpec for more flexible subplot layout
+        from matplotlib.gridspec import GridSpec
+
+        gs = GridSpec(2, 3, figure=self.figure, height_ratios=[2, 1])
+
+        # Main plot takes full width of first row
+        self.ax = self.figure.add_subplot(gs[0, :])
+
+        # Parameter subplots in second row - share Y axis
+        first_ax = None
+        for i, (param_key, title) in enumerate(self.param_configs):
+            ax = self.figure.add_subplot(
+                gs[1, i], sharey=first_ax if first_ax is not None else None
+            )
+            ax.set_title(title, fontsize=10, fontweight="bold")
+
+            # Only the first subplot gets a ylabel
+            if i == 0:
+                ax.set_ylabel("Time (Seconds)", fontsize=9)
+                first_ax = ax
+            else:
+                # Hide Y labels for shared axes to avoid clutter
+                ax.tick_params(left=False)
+                ax.set_ylabel("")  # Clear ylabel for middle subplots
+
+            ax.grid(True, alpha=0.3, axis="y")
+            self.param_axes[param_key] = ax
+
+        # Adjust layout to minimize whitespace
+        self.figure.subplots_adjust(hspace=0.3, wspace=0.1)
 
         # Embed the figure in Tkinter
         self.canvas = FigureCanvasTkAgg(self.figure, master=self)
@@ -105,7 +135,7 @@ class PlotFrame(ttk.Frame):
             self.control_frame,
             title="Plotting",
             options=plot_options,
-            default_value="none",
+            default_value="raw",
             callback=self._on_plot_type_changed,
         )
         self.plot_options_widget.pack(side=tk.LEFT, padx=5)
@@ -172,7 +202,9 @@ class PlotFrame(ttk.Frame):
         """Handle grouping option changes."""
         # Replot with current data using new grouping
         if hasattr(self, "_current_data") and self._current_data is not None:
-            self.update_plot(self._current_data, self._current_data_fitted)
+            self.update_plot(
+                self._current_data, self._current_data_fitted, self._current_params
+            )
             # Ensure cursor is redrawn after replotting
             if self.current_frame_index >= 0:
                 self.update_cursor(self.current_frame_index)
@@ -181,14 +213,18 @@ class PlotFrame(ttk.Frame):
         """Handle smoothing option changes."""
         # Replot with current data using new smoothing
         if hasattr(self, "_current_data") and self._current_data is not None:
-            self.update_plot(self._current_data, self._current_data_fitted)
+            self.update_plot(
+                self._current_data, self._current_data_fitted, self._current_params
+            )
             # Ensure cursor is redrawn after replotting
             if self.current_frame_index >= 0:
                 self.update_cursor(self.current_frame_index)
 
     def _on_plot_type_changed(self, value=None):
         if hasattr(self, "_current_data") and self._current_data is not None:
-            self.update_plot(self._current_data, self._current_data_fitted)
+            self.update_plot(
+                self._current_data, self._current_data_fitted, self._current_params
+            )
             # Ensure cursor is redrawn after replotting
             if self.current_frame_index >= 0:
                 self.update_cursor(self.current_frame_index)
@@ -304,6 +340,274 @@ class PlotFrame(ttk.Frame):
 
         return grouped_data
 
+    def collect_group_stats(
+        self, data_array: np.ndarray, params: Dict[str, np.ndarray]
+    ):
+        """Collect statistical parameters per group for boxplot visualization.
+
+        Args:
+            data_array: 2D array of curve data (frames, wells)
+            params: Dictionary of parameter arrays from curve analysis
+
+        Returns:
+            List of dictionaries containing group statistics and labels
+        """
+        grouping_option = self.grouping_widget.get_value()
+        if params is None:
+            return []
+
+        param_names = ["crossover_position", "last_index_95p", "first_index_5p"]
+        group_stats = []
+
+        # Get available parameter data length
+        first_param = next(iter(params.values()), None)
+        if first_param is None:
+            return []
+
+        num_wells = len(first_param)
+
+        # Create actual groups based on grouping logic
+        if grouping_option == "rows":
+            # Group wells by rows (each row has 8 wells in a 5x8 grid)
+            wells_per_row = 8
+            num_rows = (
+                num_wells + wells_per_row - 1
+            ) // wells_per_row  # Ceiling division
+
+            # Use project settings group names if available
+            base_labels = [f"Row {i+1}" for i in range(num_rows)]
+            if (
+                hasattr(self, "project_settings")
+                and self.project_settings
+                and self.project_settings.group_names
+            ):
+                labels_to_use = self.project_settings.group_names[:num_rows]
+                # Pad with default names if not enough custom names
+                labels_to_use.extend(base_labels[len(labels_to_use) :])
+            else:
+                labels_to_use = base_labels
+
+            # Create groups for each row
+            for row_idx in range(num_rows):
+                if row_idx >= len(labels_to_use):
+                    break
+
+                start_well = row_idx * wells_per_row
+                end_well = min((row_idx + 1) * wells_per_row, num_wells)
+                well_indices = list(range(start_well, end_well))
+
+                if well_indices:  # Only create group if there are wells
+                    group_data = {}
+                    for param_name in param_names:
+                        if param_name in params:
+                            param_values = (
+                                params[param_name][well_indices]
+                                * self.sampling_rate_seconds
+                            )
+                            # Filter out NaN values and check if we have enough data
+                            valid_values = param_values[~np.isnan(param_values)]
+                            group_data[param_name] = (
+                                valid_values.tolist() if len(valid_values) >= 1 else []
+                            )
+
+                    if any(
+                        group_data[param_name] for param_name in param_names
+                    ):  # Only if we have some valid data
+                        group_data["label"] = labels_to_use[row_idx]
+                        group_stats.append(group_data)
+
+        elif grouping_option == "columns":
+            # Group wells by columns (every 8th well)
+            cols_per_group = 8
+            num_cols = cols_per_group  # Use fixed 8 columns for consistency
+
+            # Use project settings group names if available
+            base_labels = [f"Col {i+1}" for i in range(num_cols)]
+            if (
+                hasattr(self, "project_settings")
+                and self.project_settings
+                and self.project_settings.group_names
+            ):
+                labels_to_use = self.project_settings.group_names[:num_cols]
+                # Pad with default names if not enough custom names
+                labels_to_use.extend(base_labels[len(labels_to_use) :])
+            else:
+                labels_to_use = base_labels
+
+            # Create groups for each column
+            for col_idx in range(num_cols):
+                if col_idx >= len(labels_to_use):
+                    break
+
+                # Create column indices: every cols_per_group-th well starting from col_idx
+                well_indices = [
+                    col_idx + i * cols_per_group
+                    for i in range(
+                        (num_wells - col_idx + cols_per_group - 1) // cols_per_group
+                    )
+                ]
+                well_indices = [idx for idx in well_indices if idx < num_wells]
+
+                if well_indices:  # Only create group if there are wells
+                    group_data = {}
+                    for param_name in param_names:
+                        if param_name in params:
+                            param_values = (
+                                params[param_name][well_indices]
+                                * self.sampling_rate_seconds
+                            )
+                            # Filter out NaN values
+                            valid_values = param_values[~np.isnan(param_values)]
+                            group_data[param_name] = (
+                                valid_values.tolist() if len(valid_values) >= 1 else []
+                            )
+
+                    if any(
+                        group_data[param_name] for param_name in param_names
+                    ):  # Only if we have some valid data
+                        group_data["label"] = labels_to_use[col_idx]
+                        group_stats.append(group_data)
+
+        elif grouping_option == "all":
+            # Single group with all wells
+            group_data = {}
+            well_indices = list(range(num_wells))
+
+            for param_name in param_names:
+                if param_name in params:
+                    param_values = (
+                        params[param_name][well_indices] * self.sampling_rate_seconds
+                    )
+                    # Filter out NaN values
+                    valid_values = param_values[~np.isnan(param_values)]
+                    group_data[param_name] = (
+                        valid_values.tolist() if len(valid_values) >= 1 else []
+                    )
+
+            if any(
+                group_data[param_name] for param_name in param_names
+            ):  # Only if we have some valid data
+                group_data["label"] = "All Wells"
+                group_stats.append(group_data)
+
+        return group_stats
+
+    def update_boxplot(self, group_stats: list):
+        """Update the horizontal boxplot subplots with statistical data per group.
+
+        Args:
+            group_stats: List of dictionaries containing group statistics
+        """
+        # Clear all parameter axes
+        for ax in self.param_axes.values():
+            ax.clear()
+
+        if not group_stats or len(group_stats) == 0:
+            # Show no data message on each parameter axis
+            for ax in self.param_axes.values():
+                ax.set_title("No Data", fontsize=10)
+                ax.text(
+                    0.5,
+                    0.5,
+                    "No parameter data available",
+                    transform=ax.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                )
+            return
+
+        colors = plt.cm.Set1(np.linspace(0, 1, len(group_stats)))
+
+        # Create separate boxplots for each parameter
+        for i, (param_name, title) in enumerate(self.param_configs):
+            if param_name not in self.param_axes:
+                continue
+
+            ax = self.param_axes[param_name]
+            ax.set_title(title, fontsize=10, fontweight="bold")
+            ax.set_ylabel("Time (Seconds)", fontsize=9)
+            ax.grid(True, alpha=0.3, axis="y")
+
+            # Collect data for this parameter from all groups
+            parameter_data = []
+            group_labels = []
+
+            for group_stat in group_stats:
+                if param_name in group_stat and group_stat[param_name]:
+                    parameter_data.append(group_stat[param_name])
+                    group_labels.append(
+                        group_stat.get("label", f"Group {len(group_labels) + 1}")
+                    )
+
+            if parameter_data:
+                # Create boxplot for this parameter
+                try:
+                    result = ax.boxplot(
+                        parameter_data,
+                        patch_artist=True,
+                        showfliers=True,
+                        widths=0.7,
+                        showmeans=True,
+                        meanline=False,
+                    )
+
+                    # Style the boxes with different colors for each group
+                    for i, patch in enumerate(result["boxes"]):
+                        color = colors[i % len(colors)]
+                        patch.set_facecolor(color)
+                        patch.set_alpha(0.7)
+
+                    # Style other elements
+                    for mean in result["means"]:
+                        mean.set_marker("o")
+                        mean.set_markerfacecolor("red")
+                        mean.set_markeredgecolor("black")
+                        mean.set_markersize(4)
+
+                    # Style outliers and whiskers
+                    for flier in result["fliers"]:
+                        flier.set_marker("o")
+                        flier.set_markerfacecolor("black")
+                        flier.set_markeredgecolor("none")
+                        flier.set_markersize(3)
+
+                    # Set tick labels if we have group information
+                    if (
+                        group_labels and len(group_labels) <= 10
+                    ):  # Don't clutter with too many labels
+                        ax.set_xticks(range(1, len(group_labels) + 1))
+                        ax.set_xticklabels(
+                            group_labels, rotation=45, ha="right", fontsize=8
+                        )
+
+                    # Branding for the axis
+                    ax.grid(True, alpha=0.3, axis="y")
+
+                except Exception as e:
+                    # Handle boxplot creation errors gracefully
+                    ax.text(
+                        0.5,
+                        0.5,
+                        f"Failed to create\nboxplot: {str(e)[:50]}",
+                        transform=ax.transAxes,
+                        ha="center",
+                        va="center",
+                        fontsize=8,
+                    )
+            else:
+                # No valid data for this parameter
+                ax.set_title("No Valid Data", fontsize=10)
+                ax.text(
+                    0.5,
+                    0.5,
+                    "No data available",
+                    transform=ax.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                )
+
     def _get_plot_title(self, suffix: str = "") -> str:
         """Generate plot title with project name.
 
@@ -365,6 +669,7 @@ class PlotFrame(ttk.Frame):
             # Store current data for potential replotting
             self._current_data = data
             self._current_data_fitted = fitted_data
+            self._current_params = params
 
             plot_type_option = self.plot_options_widget.get_value()
             if plot_type_option == "raw" or fitted_data is None:
@@ -490,5 +795,12 @@ class PlotFrame(ttk.Frame):
                 alpha=0.8,
                 label=f"Frame {self.current_frame_index}",
             )
+
+        # Update boxplot with statistical data if parameters are available
+        if data is not None and params is not None and len(data) > 0:
+            # Convert to numpy array for grouping stats collection
+            data_array = np.array(data)
+            group_stats = self.collect_group_stats(data_array, params)
+            self.update_boxplot(group_stats)
 
         self.canvas.draw()
