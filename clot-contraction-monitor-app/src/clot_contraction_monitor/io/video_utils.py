@@ -43,17 +43,20 @@ class VideoUtils:
         Returns:
             FPS value or None if video cannot be opened
         """
+        cap = None
         try:
             cap = cv2.VideoCapture(video_path)
             if not cap.isOpened():
                 return None
 
             fps = cap.get(cv2.CAP_PROP_FPS)
-            cap.release()
 
             return fps if fps > 0 else None
         except Exception:
             return None
+        finally:
+            if cap:
+                cap.release()
 
     @staticmethod
     def get_video_frame_count(video_path: str) -> Optional[int]:
