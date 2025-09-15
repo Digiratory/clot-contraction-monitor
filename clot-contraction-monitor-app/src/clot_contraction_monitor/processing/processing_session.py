@@ -304,8 +304,7 @@ class ProcessingSession:
                     )
                     for mask in cell_masks
                 ]
-                # Scale decoration parameters
-                font_scale = 3 * scale
+                # Scale decoration parameters (font_scale now computed adaptively in decorate_with_mask)
                 thickness = max(1, int(2 * scale))
                 circle_thickness = max(1, int(3 * scale))
                 scene = decorate_with_mask(
@@ -313,7 +312,6 @@ class ProcessingSession:
                     centers,
                     well_radius,
                     cell_masks,
-                    font_scale,
                     thickness,
                     circle_thickness,
                 )
