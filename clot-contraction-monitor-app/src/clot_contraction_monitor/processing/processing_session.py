@@ -53,6 +53,7 @@ class ProcessingSession:
         self.images: List[str] = []
         # centers, well_radius, cell_masks
         self.annotations: List[Tuple[np.ndarray, float, List[np.ndarray]]] = []
+        self.project_settings: Optional[Dict] = None
         self.clot_rel_sizes: Optional[np.ndarray] = None
         self.clot_rel_sizes_fittes: Optional[np.ndarray] = None
         self.image_cache: Dict[Tuple[int, bool], np.ndarray] = {}
@@ -89,11 +90,18 @@ class ProcessingSession:
             self.images = get_find_all_frames(folder_path, ext)
             self.annotations = []
             self.image_cache = {}
+            self.project_settings = settings
 
-            # Use wells count from settings or default
-            wells_count = (
-                settings.wells_count if settings else ProcessingSession.WELLS_COUNT
-            )
+            # Use wells count from settings
+            wells_count = settings.wells_count
+            if wells_count == 40:
+                self.culture_plate_format = (8, 5)
+            elif wells_count == 96:
+                self.culture_plate_format = (12, 8)
+            else:
+                raise ValueError(
+                    f"Unsupported count of wells {wells_count}. Supported 40 or 96"
+                )
 
             # Initialize annotations and cell sizes
             wells_founded = False
@@ -102,7 +110,9 @@ class ProcessingSession:
                 image_np = io_utils.read_image(img)
                 if image_np is not None:
                     wells_founded = self.segmentator.predefine_wells(
-                        image_np, target_count=wells_count
+                        image_np,
+                        target_count=wells_count,
+                        culture_plate_format=self.culture_plate_format,
                     )
                     if wells_founded:
                         self.logger.info(
@@ -182,7 +192,9 @@ class ProcessingSession:
                         if image_np is None:
                             self.logger.warning(f"Could not read image: {img_path}")
                             continue
-                        centers, well_radius, cell_masks = self._process_image(image_np)
+                        centers, well_radius, cell_masks = self._process_image(
+                            image_np, self.culture_plate_format
+                        )
                         self.annotations.append((centers, well_radius, cell_masks))
 
                         # Clear cache for this frame
@@ -228,7 +240,9 @@ class ProcessingSession:
                 self.logger.error(f"Error in project loaded handler: {e}")
 
     def _process_image(
-        self, image_np: np.ndarray
+        self,
+        image_np: np.ndarray,
+        culture_plate_format: int,
     ) -> Tuple[np.ndarray, float, List[np.ndarray]]:
         """Process a single image through the segmentation pipeline.
 
@@ -239,7 +253,9 @@ class ProcessingSession:
             Tuple of (centers, well_radius, cell_masks)
         """
         try:
-            return self.segmentator.process_image(image_np)
+            return self.segmentator.process_image(
+                image_np, culture_plate_format=culture_plate_format
+            )
         except Exception as e:
             self.logger.error(f"Error in _process_image: {e}")
             # Return default values on error
