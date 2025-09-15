@@ -37,14 +37,17 @@ def decorate_with_mask(
     centers: list,
     well_radius: float,
     masks: np.ndarray,
-    font_scale: float = 3,
     thickness: int = 2,
     circle_thickness: int = 3,
 ) -> np.ndarray:
     scene = np.array(full_img, copy=True, dtype=np.uint8)
 
     fontFace = cv2.FONT_HERSHEY_SIMPLEX
-    fontScale = font_scale
+    height, width = full_img.shape[:2]
+    num_labels = len(centers)
+    optimal_fontScale = min(height, width) / (300.0 + 50.0 * num_labels)
+    fontScale = max(0.5, min(optimal_fontScale, 4.0))
+    thickness = max(1, int(fontScale))
     color = (255, 0, 255)  # Green color (BGR)
     lineType = cv2.LINE_AA
 

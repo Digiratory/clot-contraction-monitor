@@ -139,16 +139,52 @@ class PlotFrame(ttk.Frame):
         self.toolbar.pack(side=tk.TOP, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
+        # Initialize with default plate format
+        self.rows = 5
+        self.cols = 8
+
+    def _set_plate_format_from_settings(self, wells_count: int) -> None:
+        """Set the plate format based on wells count (same logic as ProcessingSession).
+
+        Args:
+            wells_count: Number of wells in the plate (40 or 96)
+        """
+        if wells_count == 40:
+            self.cols, self.rows = (
+                8,
+                5,
+            )  # Note: ProcessingSession uses (8, 5) for 40 wells
+        elif wells_count == 96:
+            self.cols, self.rows = (
+                12,
+                8,
+            )  # Note: ProcessingSession uses (12, 8) for 96 wells
+        else:
+            raise ValueError(
+                f"Unsupported count of wells {wells_count}. Supported 40 or 96"
+            )
+
     def set_project_settings(self, project_settings) -> None:
         """Set the project settings to use for X-axis time scaling.
 
         Args:
-            project_settings: The project settings containing sampling rate
+            project_settings: The project settings containing sampling rate and wells count
         """
         self.project_settings = project_settings
         self.sampling_rate_seconds = (
             project_settings.sampling_rate_seconds if project_settings else 1.0
         )
+
+        # Set plate format based on wells count (using same logic as ProcessingSession)
+        if project_settings and hasattr(project_settings, "wells_count"):
+            try:
+                self._set_plate_format_from_settings(project_settings.wells_count)
+            except ValueError:
+                # Log warning but continue with default values
+                print(
+                    f"Warning: Unsupported wells count {project_settings.wells_count}, using defaults"
+                )
+
         # Update plot if data is already available
         if hasattr(self, "_current_data") and self._current_data is not None:
             self.update_plot(self._current_data, self._current_data_fitted)
@@ -276,15 +312,12 @@ class PlotFrame(ttk.Frame):
             return data_array
 
     def _group_by_rows(self, data_array):
-        """Group wells by rows (5 rows of 8 wells each)."""
-        # Wells arranged in 5x8 grid: 0-39
-        # Row 0: wells 0-7, Row 1: wells 8-15, etc.
-        rows = 5
-        cols = 8
+        """Group wells by rows based on current plate format."""
+        # Wells arranged in (rows, cols) grid
         grouped_data = []
 
-        for row in range(rows):
-            row_wells = data_array[:, row * cols : (row + 1) * cols]
+        for row in range(self.rows):
+            row_wells = data_array[:, row * self.cols : (row + 1) * self.cols]
             if row_wells.size > 0:
                 # Calculate mean and std for each frame in this row
                 row_mean = np.mean(row_wells, axis=1)
@@ -305,17 +338,14 @@ class PlotFrame(ttk.Frame):
         return grouped_data
 
     def _group_by_columns(self, data_array):
-        """Group wells by columns (8 columns of 5 wells each)."""
-        # Wells arranged in 5x8 grid: 0-39
-        # Column 0: wells 0,8,16,24,32, Column 1: wells 1,9,17,25,33, etc.
-        rows = 5
-        cols = 8
+        """Group wells by columns based on current plate format."""
+        # Wells arranged in (rows, cols) grid
         grouped_data = []
 
-        for col in range(cols):
+        for col in range(self.cols):
             col_wells = data_array[
-                :, col::cols
-            ]  # Extract every 8th element starting from col
+                :, col :: self.cols
+            ]  # Extract every cols-th element starting from col
             if col_wells.size > 0:
                 # Calculate mean and std for each frame in this column
                 col_mean = np.mean(col_wells, axis=1)
@@ -363,8 +393,8 @@ class PlotFrame(ttk.Frame):
 
         # Create actual groups based on grouping logic
         if grouping_option == "rows":
-            # Group wells by rows (each row has 8 wells in a 5x8 grid)
-            wells_per_row = 8
+            # Group wells by rows based on current plate format
+            wells_per_row = self.cols
             num_rows = (
                 num_wells + wells_per_row - 1
             ) // wells_per_row  # Ceiling division
