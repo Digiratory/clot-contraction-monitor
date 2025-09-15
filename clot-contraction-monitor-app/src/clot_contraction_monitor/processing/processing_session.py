@@ -29,7 +29,6 @@ class ProcessingSession:
     and quantitative analysis.
     """
 
-    WELLS_COUNT = 40
     TARGET_WIDTH = 960
     logger = logging.getLogger(__name__)
 
