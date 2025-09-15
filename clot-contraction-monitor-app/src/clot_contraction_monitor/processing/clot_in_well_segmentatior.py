@@ -5,9 +5,12 @@ import cv2
 import numpy as np
 
 if os.name == "nt":
-    import onnxruntime.tools.add_openvino_win_libs as utils
+    try:
+        import onnxruntime.tools.add_openvino_win_libs as utils
 
-    utils.add_openvino_libs_to_path()
+        utils.add_openvino_libs_to_path()
+    except:
+        pass
 import onnxruntime
 
 

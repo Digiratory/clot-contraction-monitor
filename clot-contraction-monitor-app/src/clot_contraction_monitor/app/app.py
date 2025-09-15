@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -265,4 +266,4 @@ class ClotContractionApp(tk.Tk):
 
     def _on_closing(self):
         self.destroy()
-        exit()
+        os._exit(0)
