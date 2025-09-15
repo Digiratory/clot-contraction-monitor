@@ -8,6 +8,7 @@ from typing import Optional
 import numpy as np
 from clot_contraction_monitor.app.frame_preview import FramePreview
 from clot_contraction_monitor.app.plot_widget import PlotFrame
+from clot_contraction_monitor.app.video_handler import show_video_dialog
 from clot_contraction_monitor.io import export_to_csv
 from clot_contraction_monitor.processing.processing_session import ProcessingSession
 from clot_contraction_monitor.project_dialog import show_project_dialog
@@ -80,6 +81,7 @@ class ClotContractionApp(tk.Tk):
             # activebackground="#4a5568"
         )
         self.file_menu.add_command(label="Select folder", command=self.select_folder)
+        self.file_menu.add_command(label="Open Video", command=self.open_video)
         self.file_menu.add_command(
             label="Save CSV", command=self.save_csv, state=tk.DISABLED
         )
@@ -104,30 +106,68 @@ class ClotContractionApp(tk.Tk):
         folder = filedialog.askdirectory()
         if folder:
             print(f"Selected folder: {folder}")
+            self._process_project_folder(folder)
 
-            # Check if settings file exists
-            if SettingsPersistence.settings_file_exists(folder):
-                # Load existing settings and start processing directly
-                try:
-                    settings = SettingsPersistence.load_settings_from_json(folder)
-                    if settings:
-                        print(
-                            f"Loaded existing settings for experiment: {settings.experiment_name}"
-                        )
-                        self._start_processing(folder, settings)
-                        return
-                except Exception as e:
-                    messagebox.showwarning(
-                        "Settings Error",
-                        f"Could not load existing settings: {e}\nPlease reconfigure the project.",
+    def open_video(self) -> None:
+        """Open a video file selection dialog and process it into frames for analysis."""
+        # Define supported video file types
+        filetypes = [
+            ("Video files", "*.mp4;*.avi;*.mov;*.wmv;*.mkv;*.flv;*.webm"),
+            ("MP4 files", "*.mp4"),
+            ("AVI files", "*.avi"),
+            ("MOV files", "*.mov"),
+            ("WMV files", "*.wmv"),
+            ("All files", "*.*"),
+        ]
+
+        video_path = filedialog.askopenfilename(
+            title="Select Video File", filetypes=filetypes
+        )
+
+        if video_path:
+            print(f"Selected video: {video_path}")
+
+            # Callback when video processing is complete
+            def on_video_processed(project_folder: str) -> None:
+                """Handle completion of video frame extraction."""
+                if project_folder:
+                    print(f"Video processed to folder: {project_folder}")
+                    self._process_project_folder(project_folder)
+                else:
+                    messagebox.showerror("Error", "Video processing failed.")
+
+            # Show video processing dialog
+            show_video_dialog(self, video_path, on_video_processed)
+
+    def _process_project_folder(self, folder: str) -> None:
+        """Process a project folder (either selected directly or created from video).
+
+        Args:
+            folder: Path to the folder containing image files
+        """
+        # Check if settings file exists
+        if SettingsPersistence.settings_file_exists(folder):
+            # Load existing settings and start processing directly
+            try:
+                settings = SettingsPersistence.load_settings_from_json(folder)
+                if settings:
+                    print(
+                        f"Loaded existing settings for experiment: {settings.experiment_name}"
                     )
+                    self._start_processing(folder, settings)
+                    return
+            except Exception as e:
+                messagebox.showwarning(
+                    "Settings Error",
+                    f"Could not load existing settings: {e}\nPlease reconfigure the project.",
+                )
 
-            # No valid settings file exists, show configuration dialog
-            def on_settings_configured(settings: ProjectSettings) -> None:
-                """Callback when project settings are configured."""
-                self._start_processing(folder, settings)
+        # No valid settings file exists, show configuration dialog
+        def on_settings_configured(settings: ProjectSettings) -> None:
+            """Callback when project settings are configured."""
+            self._start_processing(folder, settings)
 
-            show_project_dialog(self, folder, on_settings_configured)
+        show_project_dialog(self, folder, on_settings_configured)
 
     def _start_processing(self, folder: str, settings: ProjectSettings) -> None:
         """Start processing with configured project settings.
