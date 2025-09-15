@@ -8,13 +8,11 @@ image sequences with configurable sampling rates.
 import os
 import threading
 import tkinter as tk
+from glob import glob
 from tkinter import filedialog, messagebox, ttk
 from typing import Callable, Optional
 
 from ..io.video_utils import VideoUtils
-from ..project_dialog import show_project_dialog
-from ..project_settings import ProjectSettings
-from .app import ClotContractionApp
 
 
 class VideoDialog(tk.Toplevel):
@@ -46,7 +44,7 @@ class VideoDialog(tk.Toplevel):
 
         # Configure window
         self.title("Configure Video Processing")
-        self.geometry("500x450")
+        self.geometry("500x600")
         self.resizable(False, False)
 
         # Center the dialog
@@ -267,6 +265,19 @@ class VideoDialog(tk.Toplevel):
             self.progress_bar.pack(fill="x", pady=(5, 0))
             self.progress_label.pack(pady=(5, 0))
 
+            self.project_folder = VideoUtils.create_project_folder_for_video(
+                self.video_path
+            )
+
+            # Check if frames already exist
+            if self._check_frames_already_exist():
+                # Frames already exist - skip extraction
+                self._update_progress(
+                    100, "Frames already extracted - using existing frames"
+                )
+                self.after(500, lambda: self._finish_processing())
+                return
+
             # Start processing in thread
             processing_thread = threading.Thread(
                 target=self._process_video, args=(extraction_fps,), daemon=True
@@ -290,6 +301,15 @@ class VideoDialog(tk.Toplevel):
                 self.video_path
             )
 
+            # Check if frames already exist
+            if self._check_frames_already_exist():
+                # Frames already exist - skip extraction
+                self._update_progress(
+                    100, "Frames already extracted - using existing frames"
+                )
+                self.after(500, lambda: self._finish_processing())
+                return
+
             # Update progress
             self._update_progress(30, "Extracting video frames...")
 
@@ -297,12 +317,18 @@ class VideoDialog(tk.Toplevel):
             if self.extraction_option_var.get() == "all_frames":
                 # Extract all frames
                 extracted_count, actual_fps = VideoUtils.extract_frames_from_video(
-                    self.video_path, self.project_folder, frame_interval=1
+                    self.video_path,
+                    self.project_folder,
+                    frame_interval=1,
+                    progress_callback=self._update_progress,
                 )
             else:
                 # Extract at custom FPS
                 extracted_count, actual_fps = VideoUtils.extract_frames_at_fps(
-                    self.video_path, self.project_folder, extraction_fps
+                    self.video_path,
+                    self.project_folder,
+                    extraction_fps,
+                    progress_callback=self._update_progress,
                 )
 
             # Update progress
@@ -321,7 +347,8 @@ class VideoDialog(tk.Toplevel):
             self.after(500, lambda: self._finish_processing())
 
         except Exception as e:
-            self.after(0, lambda: self._handle_error(f"Video processing failed: {e}"))
+            error_msg = f"Video processing failed: {e}"
+            self.after(0, lambda: self._handle_error(error_msg))
 
     def _update_progress(self, value: int, message: str) -> None:
         """Update progress bar and message safely from thread."""
@@ -336,6 +363,21 @@ class VideoDialog(tk.Toplevel):
         """Finish processing and close dialog."""
         self.callback(self.project_folder)
         self.destroy()
+
+    def _check_frames_already_exist(self) -> bool:
+        """Check if frames for the current video have already been extracted.
+
+        Returns:
+            True if frames already exist, False otherwise
+        """
+        if not os.path.exists(self.project_folder):
+            return False
+
+        # Look for .jpg files in the project folder
+        jpg_pattern = os.path.join(self.project_folder, "*.jpg")
+        jpg_files = glob(jpg_pattern)
+
+        return len(jpg_files) > 0
 
     def _handle_error(self, error_msg: str) -> None:
         """Handle processing error."""

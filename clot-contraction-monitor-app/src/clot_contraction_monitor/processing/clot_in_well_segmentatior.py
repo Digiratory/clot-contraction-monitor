@@ -19,6 +19,10 @@ def get_onnx_providers():
     providers = []
     provider_options = []
 
+    if "DmlExecutionProvider" in available_providers:
+        providers.append("DmlExecutionProvider")
+        provider_options.append({})
+
     if "OpenVINOExecutionProvider" in available_providers:
         from openvino import Core
 
@@ -35,24 +39,38 @@ def get_onnx_providers():
 class CellInWellSegmentatior:
     TARGET_SHAPE = 192
 
-    def __init__(self, onnx_model_path: str):
-        self._onnx_model_path = onnx_model_path
+    def __init__(self):
 
         self.sess_options = onnxruntime.SessionOptions()
         self.sess_options.graph_optimization_level = (
             onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
         )
 
-        providers, provider_options = get_onnx_providers()
-        self.ort_session = onnxruntime.InferenceSession(
-            self._onnx_model_path,
-            providers=providers,
-            provider_options=provider_options,
-            sess_options=self.sess_options,
-        )
+        self.providers, self.provider_options = get_onnx_providers()
+        self._onnx_model_path = None
+        self.ort_session = None
+
         self.centers = None
         self.well_radius = None
         self.well_mask = None
+
+    def _load_model(self, batch_size: int):
+        if batch_size == 40:
+            self._onnx_model_path = os.path.join(
+                os.path.dirname(__file__), "..", "assets", "optimized_model_40.onnx"
+            )
+        elif batch_size == 96:
+            self._onnx_model_path = os.path.join(
+                os.path.dirname(__file__), "..", "assets", "optimized_model_96.onnx"
+            )
+        else:
+            raise ValueError(f"Unsupported batch size {batch_size}")
+        self.ort_session = onnxruntime.InferenceSession(
+            self._onnx_model_path,
+            providers=self.providers,
+            provider_options=self.provider_options,
+            sess_options=self.sess_options,
+        )
 
     def predefine_wells(
         self,
@@ -95,6 +113,7 @@ class CellInWellSegmentatior:
             self.well_radius = well_radius
             self.well_mask = ccm_ws.circle_mask(well_radius)
             self.culture_plate_format = culture_plate_format
+            self._load_model(target_count)
             return True
         else:
             return False

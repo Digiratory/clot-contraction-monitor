@@ -6,7 +6,7 @@ and creating project directories for video-based analysis.
 """
 
 import os
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import cv2
 
@@ -112,6 +112,7 @@ class VideoUtils:
         output_folder: str,
         frame_interval: int = 1,
         max_frames: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> Tuple[int, float]:
         """Extract frames from a video file at specified intervals.
 
@@ -121,6 +122,7 @@ class VideoUtils:
             frame_interval: Interval between extracted frames (1 = every frame,
                           2 = every 2nd frame, etc.)
             max_frames: Maximum number of frames to extract (None for all)
+            progress_callback: Optional callback function to report progress (value, message)
 
         Returns:
             Tuple of (number of frames extracted, frames per second)
@@ -148,6 +150,13 @@ class VideoUtils:
             frame_count = 0
             extracted_count = 0
 
+            # Estimate total frames to extract
+            estimated_total_frames = (
+                total_frames + frame_interval - 1
+            ) // frame_interval
+            if max_frames:
+                estimated_total_frames = min(estimated_total_frames, max_frames)
+
             while True:
                 ret, frame = cap.read()
                 if not ret:
@@ -156,9 +165,21 @@ class VideoUtils:
                 # Extract frame at specified intervals
                 if frame_count % frame_interval == 0:
                     # Save frame as JPEG
-                    frame_filename = os.path.join(output_folder, "06d")
+                    frame_filename = os.path.join(
+                        output_folder, f"frame_{extracted_count:06d}.jpg"
+                    )
                     cv2.imwrite(frame_filename, frame)
                     extracted_count += 1
+
+                    # Report progress for every extracted frame
+                    if progress_callback:
+                        # Calculate percentage (30% is the start of extraction phase)
+                        progress_percent = 30 + int(
+                            (extracted_count / max(1, estimated_total_frames)) * 65
+                        )
+                        progress_callback(
+                            progress_percent, f"Extracted {extracted_count} frames..."
+                        )
 
                     # Check if we've reached max_frames limit
                     if max_frames and extracted_count >= max_frames:
@@ -178,6 +199,7 @@ class VideoUtils:
         output_folder: str,
         target_fps: float,
         max_frames: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, str], None]] = None,
     ) -> Tuple[int, float]:
         """Extract frames from video at a target frame rate.
 
@@ -186,6 +208,7 @@ class VideoUtils:
             output_folder: Path to output folder for extracted frames
             target_fps: Target frames per second for extraction
             max_frames: Maximum number of frames to extract
+            progress_callback: Optional callback function to report progress (value, message)
 
         Returns:
             Tuple of (number of frames extracted, actual fps achieved)
@@ -215,7 +238,7 @@ class VideoUtils:
 
             # Use the frame interval extraction method
             return VideoUtils.extract_frames_from_video(
-                video_path, output_folder, frame_interval, max_frames
+                video_path, output_folder, frame_interval, max_frames, progress_callback
             )
 
         except Exception as e:

@@ -37,11 +37,7 @@ class ProcessingSession:
         """Initialize the processing session with default settings."""
         # TODO: implement logic to save processing results into persistance storage.
         try:
-            self.segmentator = CellInWellSegmentatior(
-                os.path.join(
-                    os.path.dirname(__file__), "..", "assets", "optimized_model.onnx"
-                )
-            )
+            self.segmentator = CellInWellSegmentatior()
             self.logger.info("Processing session initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize segmentator: {e}")
