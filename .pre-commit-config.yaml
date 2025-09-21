@@ -10,7 +10,7 @@ repos:
       - id: check-json
       - id: detect-private-key
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.0
+    rev: 5.13.2
     hooks:
       - id: isort
         name: isort (python)
@@ -19,7 +19,6 @@ repos:
         language: python
         types_or: [cython, pyi, python]
         args: ["--profile", "black", '--filter-files']
-        minimum_pre-commit_version: '3.2.0'
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.1.0
     hooks:

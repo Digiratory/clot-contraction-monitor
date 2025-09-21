@@ -126,8 +126,12 @@ class ProcessingSession:
                 self.clot_rel_sizes = np.zeros(
                     (len(self.images), wells_count), dtype=float
                 )
+                self.logger.warning(
+                    f"self.clot_rel_sizes is {self.clot_rel_sizes.shape}"
+                )
             else:
                 self.clot_rel_sizes = None
+                self.logger.warning("self.clot_rel_sizes is None")
 
             # Store project settings for later use
             self.project_settings = settings
@@ -336,6 +340,9 @@ class ProcessingSession:
         Returns:
             Array of cell sizes or None if not available
         """
+        print(
+            f"clot_rel_sizes shape: {self.clot_rel_sizes.shape if self.clot_rel_sizes is not None else None}"
+        )
         return self.clot_rel_sizes
 
     def get_frame_data(self, frame_idx: int) -> Optional[np.ndarray]:

@@ -24,6 +24,7 @@
 - Vertical boxplot subplots for statistical parameter visualization
 - Statistical parameter analysis (crossover position, 95% point, 5% point frames)
 - Improved data grouping options (all wells, by rows, by columns)
+- Python 3.8 compatibility implementation: Updated generic type annotations to use typing module equivalents instead of builtin syntax
 - Percentile threshold bug fixes and parameter subplot enhancements
 
 ### 🟡 IN PROGRESS

@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict, Optional, Union
 
+import matplotlib
+
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 from clot_contraction_monitor.app.radio_group_widget import RadioGroupWidget

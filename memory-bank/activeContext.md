@@ -1,7 +1,7 @@
 # Active Context: Clots Contraction Monitor
 
 ## Current Development Phase
-Enhancement and optimization phase: transforming prototype into production-ready application.
+Enhancement and optimization phase: transforming prototype into production-ready application with Python 3.8+ compatibility.
 
 ## Primary Objectives
 1. Code quality and testing infrastructure
@@ -27,7 +27,7 @@ Enhancement and optimization phase: transforming prototype into production-ready
 - **Tkinter Enhancement**: Lightweight, cross-platform GUI
 
 ## Current Technology Stack
-- Python 3.10+, ONNX Runtime, OpenCV, Tkinter, Matplotlib
+- Python 3.8+, ONNX Runtime, OpenCV, Tkinter, Matplotlib
 - Poetry for dependency management
 - pytest for testing, Black/Mypy for quality
 

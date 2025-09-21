@@ -1,10 +1,12 @@
 import os
+import sys
+from typing import Any, Dict, Tuple
 
 import clot_contraction_monitor.processing.wells_selection as ccm_ws
 import cv2
 import numpy as np
 
-if os.name == "nt":
+if os.name == "nt" and sys.version_info >= (3, 9):
     try:
         import onnxruntime.tools.add_openvino_win_libs as utils
 
@@ -23,13 +25,20 @@ def get_onnx_providers():
         providers.append("DmlExecutionProvider")
         provider_options.append({})
 
-    if "OpenVINOExecutionProvider" in available_providers:
-        from openvino import Core
+    # OpenVINO has compatibility issues on Python < 3.9, so skip it
+    if sys.version_info >= (3, 9):
+        try:
+            if "OpenVINOExecutionProvider" in available_providers:
+                from openvino import Core
 
-        ov_devs = Core().available_devices
+                ov_devs = Core().available_devices
 
-        providers.append("OpenVINOExecutionProvider")
-        provider_options.append({"device_type": "GPU" if "GPU" in ov_devs else "AUTO"})
+                providers.append("OpenVINOExecutionProvider")
+                provider_options.append(
+                    {"device_type": "GPU" if "GPU" in ov_devs else "CPU"}
+                )
+        except Exception:
+            pass  # Skip OpenVINO if it fails
 
     providers.append("CPUExecutionProvider")
     provider_options.append({})
@@ -76,7 +85,7 @@ class CellInWellSegmentatior:
         self,
         image_np: np.ndarray,
         target_count: int,
-        culture_plate_format: tuple[int, int],
+        culture_plate_format: Tuple[int, int],
     ) -> bool:
         """Predefines well locations and properties for subsequent cell segmentation processing.
 
@@ -90,7 +99,7 @@ class CellInWellSegmentatior:
                 If color image, it will be automatically converted to grayscale for processing.
             target_count (int): Expected number of wells that should be detected in the image.
                 The method will only succeed if exactly this number of wells are found.
-            culture_plate_format (tuple[int, int]): Expected grid dimensions as (number_of_wells_x, number_of_wells_y).
+            culture_plate_format (Tuple[int, int]): Expected grid dimensions as (number_of_wells_x, number_of_wells_y).
                 Used to guide the well detection algorithm with prior knowledge of the plate layout.
 
         Returns:
@@ -113,13 +122,16 @@ class CellInWellSegmentatior:
             self.well_radius = well_radius
             self.well_mask = ccm_ws.circle_mask(well_radius)
             self.culture_plate_format = culture_plate_format
-            self._load_model(target_count)
+            try:
+                self._load_model(target_count)
+            except:
+                print("Problem with model loading. Work in preview only mode")
             return True
         else:
             return False
 
     def process_image(
-        self, image_np: np.ndarray, culture_plate_format: tuple[int, int] = None
+        self, image_np: np.ndarray, culture_plate_format: Tuple[int, int] = None
     ):
         if len(image_np.shape) == 3:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
@@ -196,7 +208,7 @@ class CellInWellSegmentatior:
         return masks
 
     def _postprocess_cell_batched(
-        self, masks_predicted: np.ndarray, source_shape: tuple[int, int]
+        self, masks_predicted: np.ndarray, source_shape: Tuple[int, int]
     ):
         orig_size_masks = np.zeros(
             (

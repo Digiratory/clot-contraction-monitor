@@ -1,7 +1,7 @@
 # Technology Context: Clots Contraction Monitor
 
 ## Core Technology Stack
-- **Language**: Python 3.10+ for scientific computing ecosystem
+- **Language**: Python 3.8+ for broad compatibility and scientific computing ecosystem
 - **Neural Networks**: ONNX Runtime for cross-platform inference
 - **Computer Vision**: OpenCV 4.8+ for image processing
 - **Scientific Libraries**: NumPy, SciPy
