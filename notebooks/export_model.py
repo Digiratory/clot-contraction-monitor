@@ -40,7 +40,7 @@ def export_model_to_onnx(
     height: int = 192,
     width: int = 192,
     n_classes: int = 2,
-    opset_version: int = 22,
+    opset_version: int = 21,
     optimize: bool = True,
     quantize: bool = False,
     fp16: bool = False,
