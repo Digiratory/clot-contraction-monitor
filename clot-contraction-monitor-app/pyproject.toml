@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clot-contraction-monitor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Clot Contraction Monitor - Analyze clot contraction patterns in biological experiments"
 authors = ["Aleksandr Sinitca <siniza.s.94@gmail.com>"]
 readme = "README.md"
@@ -16,10 +16,12 @@ scikit-image = ">=0.18.0"
 pandas = ">=1.3.0"
 scipy = ">=1.7.0"
 onnxruntime = ">1.19.0"
-onnxruntime-directml = ">1.19.0"
 typing-extensions = ">=4.0.0"
 
 
 [build-system]
 requires = ["poetry-core>=1.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+clot-contraction-monitor-app = "clot_contraction_monitor.app.main:main"

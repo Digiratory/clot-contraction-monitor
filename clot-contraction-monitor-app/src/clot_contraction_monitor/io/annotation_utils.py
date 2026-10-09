@@ -9,7 +9,7 @@ import json
 import os
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -236,9 +236,14 @@ def get_frame_index_from_path(image_path: str) -> int:
         return 0
 
 
-def get_find_all_frames(folder_path: str, ext: str = "JPG") -> List[str]:
+def get_find_all_frames(folder_path: str, ext: Union[str, tuple] = "JPG") -> List[str]:
+    if isinstance(ext, str):
+        ext = [
+            ext,
+        ]
+    ext = tuple([f".{e.lower()}" for e in ext])
     image_files = sorted(
-        [f for f in os.listdir(folder_path) if f.lower().endswith(f".{ext.lower()}")]
+        [f for f in os.listdir(folder_path) if f.lower().endswith(ext)]
     )
     return [os.path.join(folder_path, img_file) for img_file in image_files]
 
