@@ -20,6 +20,8 @@ from clot_contraction_monitor.processing.clot_in_well_segmentatior import (
 )
 from clot_contraction_monitor.project_settings import ProjectSettings
 
+IMAGE_EXTS = ("jpg", "jpeg", "png")
+
 
 class ProcessingSession:
     """Manages the processing pipeline for cell contraction analysis.
@@ -68,14 +70,14 @@ class ProcessingSession:
     def select_folder(
         self,
         folder_path: str,
-        ext: str = "JPG",
+        ext: str = IMAGE_EXTS,
         settings: Optional[ProjectSettings] = None,
     ) -> bool:
         """Select and load images from a folder for processing.
 
         Args:
             folder_path: Path to the folder containing image files
-            ext: File extension to filter (default: "JPG")
+            ext: File extension to filter (default: IMAGE_EXTS)
             settings: Project settings to use for processing
 
         Returns:
@@ -162,7 +164,7 @@ class ProcessingSession:
 
             # Check for existing annotations and resume from last processed frame
             last_processed = get_last_processed_frame(
-                self.images[0] if self.images else "", "JPG"
+                self.images[0] if self.images else "", IMAGE_EXTS
             )
             self.logger.info(f"Resuming from frame {last_processed}")
 
