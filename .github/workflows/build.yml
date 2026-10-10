@@ -49,6 +49,7 @@ jobs:
           sudo apt-get install -y python3-tk xvfb
 
       - name: Install Python dependencies
+        working-directory: clot-contraction-monitor-app
         run: |
           pip install .
           pip install pyinstaller
