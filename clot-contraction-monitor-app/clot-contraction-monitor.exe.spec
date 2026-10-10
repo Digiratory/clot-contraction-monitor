@@ -37,7 +37,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='clot-contraction-monitor.exe',
+    name='clot-contraction-monitor' + ('.exe' if os.name == 'nt' else ''),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
