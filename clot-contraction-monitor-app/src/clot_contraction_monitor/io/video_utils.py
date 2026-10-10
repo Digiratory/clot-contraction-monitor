@@ -102,7 +102,6 @@ class VideoUtils:
                 )
                 return None
 
-            cap.release()
             return total_frames
 
         except Exception as e:
