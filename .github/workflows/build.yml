@@ -78,7 +78,12 @@ jobs:
 
       - name: Smoke test binary
         working-directory: clot-contraction-monitor-app/dist
-        run: ./${{ matrix.binary }} --help
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a ./${{ matrix.binary }} --help
+          else
+            ./${{ matrix.binary }} --help
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
